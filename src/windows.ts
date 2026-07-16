@@ -10,7 +10,7 @@ import { registerPaintedContent, registerPaintedContentFallback } from './paint'
 import { sessionPromise } from './session';
 import { extensionsPromise, installedExtensionsPromise } from './extensions';
 import { paintInitialFrame } from './tty/kittyGraphics';
-import { getWindowSize, ShmGraphicBuffer } from 'awrit-native-rs';
+import { getWindowSize, ShmGraphicBuffer } from 'cliweb-native-rs';
 import { options } from './args';
 import { console_ } from './console';
 import { TOOLBAR_PORT } from './runner/ports';
@@ -86,7 +86,7 @@ export const managedViews: WindowView[] = [];
  */
 export async function createWindowWithToolbar(
   size: { width: number; height: number },
-  initialUrl = 'https://github.com/chase/awrit',
+  initialUrl = 'https://github.com/atomashevic/cliweb',
 ): Promise<WindowView> {
   console_.error('size', size);
   // Create layout container with device pixel dimensions

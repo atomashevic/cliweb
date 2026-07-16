@@ -56,7 +56,7 @@ impl ShmGraphicBuffer {
     } else {
       &hex
     };
-    let name = format!("/awrit_{}", significant_part);
+    let name = format!("/cliweb_{}", significant_part);
 
     Self { name, size }
   }

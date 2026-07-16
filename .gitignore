@@ -4,4 +4,4 @@ out
 .DS_Store
 *.log*
 .bun
-awrit_error.txt
+cliweb_error.txt

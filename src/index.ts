@@ -5,7 +5,7 @@ import {
   type TermEvent,
   termDisableFeatures,
   getWindowSize,
-} from 'awrit-native-rs';
+} from 'cliweb-native-rs';
 import * as out from './tty/output';
 import { handleInput } from './inputHandler';
 import { createWindowWithToolbar } from './windows';
@@ -17,7 +17,7 @@ import { loadKeyBindings } from './keybindings';
 import fs from 'node:fs';
 import path from 'node:path';
 
-let homepage = 'https://github.com/chase/awrit';
+let homepage = 'https://github.com/atomashevic/cliweb';
 
 function loadConfig(config: typeof import('../config.js')) {
   if (config.homepage) homepage = config.homepage;
