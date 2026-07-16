@@ -35,8 +35,11 @@ pub fn term_enable_features() -> napi::Result<SupportedFeatures> {
   let mut stdout = std::io::stdout();
 
   // TODO: check if this is actually needed? It could potentially block the event loop for 200ms
-  let keyboard =
+  let terminal_keyboard =
     supports_keyboard_enhancement().map_err(|e| napi::Error::from_reason(e.to_string()))?;
+  // tmux translates extended keys for pane applications but does not answer
+  // the Kitty keyboard capability query that crossterm uses for detection.
+  let keyboard = terminal_keyboard || std::env::var_os("TMUX").is_some();
 
   let graphics =
     query_kitty_graphics_support().map_err(|e| napi::Error::from_reason(e.to_string()))?;
