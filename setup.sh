@@ -86,12 +86,41 @@ if [ ! -d "$BUN_INSTALL_DIR" ]; then
   rm -r "$BUN_BIN_DIR/bun-$target" "$BUN_EXE.zip"
 fi
 
-if [ ! -d "$BASE_DIR/node_modules" ]; then
-  (cd awrit-native-rs && "$BUN_EXE" scripts/download-binary.js)
-  "$BUN_EXE" install
+if ! command -v cargo >/dev/null; then
+  echo "error: Rust and Cargo are required to build cliweb-native-rs" >&2
+  exit 1
+fi
 
-  # Patch Electron.app to not display in the Dock, because it seems odd
-  if [ "$(uname -s)" = "Darwin" ]; then
-    sed -i '' 's/<\/dict>/    <key>LSUIElement<\/key>\n    <true\/>\n<\/dict>/' "$BASE_DIR/node_modules/electron/dist/Electron.app/Contents/Info.plist" || true
+"$BUN_EXE" install
+
+if [ "$(uname -s)" = "Linux" ]; then
+  electron_sandbox="$BASE_DIR/node_modules/electron/dist/chrome-sandbox"
+  sandbox_ready=false
+
+  if [ -x "$electron_sandbox" ] && [ -u "$electron_sandbox" ] &&
+    [ "$(stat -c '%u' "$electron_sandbox")" = "0" ]; then
+    sandbox_ready=true
+  else
+    for system_sandbox in \
+      /opt/google/chrome/chrome-sandbox \
+      /usr/lib/claude-desktop/chrome-sandbox \
+      /usr/lib/chromium/chrome-sandbox \
+      /usr/lib/chromium-browser/chrome-sandbox; do
+      if [ -x "$system_sandbox" ] && [ -u "$system_sandbox" ] &&
+        [ "$(stat -c '%u' "$system_sandbox")" = "0" ]; then
+        ln -sf "$system_sandbox" "$electron_sandbox"
+        sandbox_ready=true
+        break
+      fi
+    done
   fi
+
+  if [ "$sandbox_ready" = false ]; then
+    echo "warning: no root-owned setuid Chromium sandbox was found" >&2
+  fi
+fi
+
+# Patch Electron.app to not display in the Dock, because it seems odd
+if [ "$(uname -s)" = "Darwin" ]; then
+  sed -i '' 's/<\/dict>/    <key>LSUIElement<\/key>\n    <true\/>\n<\/dict>/' "$BASE_DIR/node_modules/electron/dist/Electron.app/Contents/Info.plist" || true
 fi

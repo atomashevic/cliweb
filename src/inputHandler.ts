@@ -1,4 +1,4 @@
-import type { KeyEvent as KeyEventOriginal, TermEvent } from 'awrit-native-rs';
+import type { KeyEvent as KeyEventOriginal, TermEvent } from 'cliweb-native-rs';
 import { handleEvent as handleKeyBinding } from './keybindings';
 import { focusedView } from './windows';
 

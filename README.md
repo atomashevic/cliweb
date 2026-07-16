@@ -1,18 +1,21 @@
 I no longer have time to maintain my hobby projects and with the rising number of security issues, I would advise you to look at a more actively maintained fork.
 
-If you use macOS you might enjoy using [cmux](https://github.com/manaflow-ai/cmux) as a replacement for awrit.
+If you use macOS you might enjoy using [cmux](https://github.com/manaflow-ai/cmux) as a replacement for cliweb.
 
 ---
 
 # Actual Web Rendering in Terminal
 
-Or just `awrit`.
+Or just `cliweb`.
 
-[awrit-demo.webm](https://github.com/user-attachments/assets/5da3fffc-d781-4b00-9fe3-19ce18d01a7e)
+See [the rebrand and installation notes](docs/REBRAND.md) for the complete
+identity, packaging, installer, and Linux runtime changes.
+
+[cliweb-demo.webm](https://github.com/user-attachments/assets/5da3fffc-d781-4b00-9fe3-19ce18d01a7e)
 
 Yep, actual Chromium being rendered in your favorite terminal that supports the [Kitty terminal graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/).
 
-**`awrit` works best in [Kitty v0.31 or newer](https://github.com/kovidgoyal/kitty/releases)**
+**`cliweb` works best in [Kitty v0.31 or newer](https://github.com/kovidgoyal/kitty/releases)**
 
 ## Why?
 
@@ -24,9 +27,9 @@ Yep, actual Chromium being rendered in your favorite terminal that supports the 
 ## Usage
 
 ```bash
-awrit [url]
+cliweb [url]
 
-# if url is not provided, it will go to the awrit homepage (this is temporary, promise)
+# if url is not provided, it will go to the cliweb homepage (this is temporary, promise)
 # the URL protocol can be http:, https:, or data:
 # if the URL protocol is not included, https: is used by default
 ```
@@ -34,12 +37,12 @@ awrit [url]
 For more options look at the help:
 
 ```bash
-awrit --help
+cliweb --help
 ```
 
 ## Configuration
 
-`awrit` can be configured through `config.js` in the project root. Changes to it will update the config in any running `awrit`.
+`cliweb` can be configured through `config.js` in the project root. Changes to it will update the config in any running `cliweb`.
 
 Currently it only supports custom keybindings and changing the homepage that displays when no URL is provided.
 
@@ -47,19 +50,19 @@ For more details on keybinding syntax and available actions, see the comments in
 
 ## Contributing
 
-See [Contributing to Awrit](/CONTRIBUTING.md#contributing-to-awrit).
+See [Contributing to Cliweb](/CONTRIBUTING.md#contributing-to-cliweb).
 
 ## Development
 
-Assuming you already have `git` installed, your installation of `awrit` will already be a Git repository.
+Assuming you already have `git` installed, your installation of `cliweb` will already be a Git repository.
 
-You can update `awrit` to use your fork by changing the origin:
+You can update `cliweb` to use your fork by changing the origin:
 
 ``` bash
 # note: you'll have to change the username some-kind-contributor to your GitHub username
-git remote set-url origin git@github.com:some-kind-contributor/awrit.git
+git remote set-url origin git@github.com:some-kind-contributor/cliweb.git
 # also track the upstream electron branch
-git remote add upstream -f -t electron git@github.com:chase/awrit.git
+git remote add upstream -f -t electron git@github.com:atomashevic/cliweb.git
 ```
 
 You can make a branch (ex: my-feature-branch) off the latest changes by doing:

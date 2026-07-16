@@ -60,8 +60,8 @@ function downloadFromUrl(url, file, outputPath) {
 
 function downloadBinary() {
 	const target = getPlatformTarget();
-	const filename = `awrit-native-rs.${target}.node`;
-	const url = `https://github.com/chase/awrit/releases/download/awrit-native-rs-${version}/${filename}`;
+	const filename = `cliweb-native-rs.${target}.node`;
+	const url = `https://github.com/atomashevic/cliweb/releases/download/cliweb-native-rs-${version}/${filename}`;
 	const outputPath = path.resolve(__dirname, `../${filename}`);
 
 	// Check if the binary already exists

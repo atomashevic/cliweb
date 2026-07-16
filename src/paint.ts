@@ -1,4 +1,4 @@
-import { getWindowSize, ShmGraphicBuffer } from 'awrit-native-rs';
+import { getWindowSize, ShmGraphicBuffer } from 'cliweb-native-rs';
 import type { BrowserWindow, NativeImage, Rectangle } from 'electron';
 import { abort } from './abort';
 import { options } from './args';

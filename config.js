@@ -1,7 +1,7 @@
 /** Homepage
  * The page that's displayed by default when no URL is provided
  **/
-const homepage = 'https://github.com/chase/awrit';
+const homepage = 'https://github.com/atomashevic/cliweb';
 
 /** Keybindings
  *

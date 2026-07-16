@@ -6,9 +6,13 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-# Check for ../.bun/bin/bun
-if [ -x "../.bun/bin/bun" ]; then
-    exec "../.bun/bin/bun" "$@"
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+
+# Check for the repository-local Bun from either the source package or node_modules.
+if [ -x "$SCRIPT_DIR/../.bun/bin/bun" ]; then
+    exec "$SCRIPT_DIR/../.bun/bin/bun" "$@"
+elif [ -x "$SCRIPT_DIR/../../.bun/bin/bun" ]; then
+    exec "$SCRIPT_DIR/../../.bun/bin/bun" "$@"
 # Check for bun in PATH
 elif command -v bun >/dev/null 2>&1; then
     exec bun "$@"

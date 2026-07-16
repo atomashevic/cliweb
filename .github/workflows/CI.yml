@@ -1,7 +1,7 @@
 name: CI
 env:
   DEBUG: napi:*
-  APP_NAME: awrit-native-rs
+  APP_NAME: cliweb-native-rs
   MACOSX_DEPLOYMENT_TARGET: '10.13'
   NODE_VERSION: 22
 permissions:
@@ -12,13 +12,13 @@ permissions:
     branches:
       - electron
     paths:
-      - 'awrit-native-rs/package.json'
-      - 'awrit-native-rs/Cargo.*'
-      - 'awrit-native-rs/src/**'
-      - 'awrit-native-rs/build.rs'
-      - 'awrit-native-rs/crates/**/*.rs'
-      - 'awrit-native-rs/src/Cargo.*'
-      - 'awrit-native-rs/crates/**/Cargo.*'
+      - 'cliweb-native-rs/package.json'
+      - 'cliweb-native-rs/Cargo.*'
+      - 'cliweb-native-rs/src/**'
+      - 'cliweb-native-rs/build.rs'
+      - 'cliweb-native-rs/crates/**/*.rs'
+      - 'cliweb-native-rs/src/Cargo.*'
+      - 'cliweb-native-rs/crates/**/Cargo.*'
       - '.github/workflows/CI.yml'
 jobs:
   build:
@@ -28,7 +28,7 @@ jobs:
         settings:
           - host: macos-latest
             target: x86_64-apple-darwin
-            build: yarn ci --target x86_64-apple-darwin && rm awrit-native-rs.darwin-arm64.node
+            build: yarn ci --target x86_64-apple-darwin && rm cliweb-native-rs.darwin-arm64.node
           - host: ubuntu-22.04
             target: x86_64-unknown-linux-gnu
             build: yarn ci --target x86_64-unknown-linux-gnu
@@ -42,7 +42,7 @@ jobs:
     runs-on: ${{ matrix.settings.host }}
     defaults:
       run:
-        working-directory: awrit-native-rs
+        working-directory: cliweb-native-rs
     steps:
       - uses: actions/checkout@v4
       - name: Setup node
@@ -50,7 +50,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: yarn
-          cache-dependency-path: awrit-native-rs/yarn.lock
+          cache-dependency-path: cliweb-native-rs/yarn.lock
       - name: Install dependencies
         run: yarn install
       - name: Install
@@ -75,7 +75,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: bindings-${{ matrix.settings.target }}
-          path: awrit-native-rs/${{ env.APP_NAME }}.*.node
+          path: cliweb-native-rs/${{ env.APP_NAME }}.*.node
           if-no-files-found: error
 
   publish:
@@ -85,7 +85,7 @@ jobs:
       - build
     defaults:
       run:
-        working-directory: awrit-native-rs
+        working-directory: cliweb-native-rs
     steps:
       - uses: actions/checkout@v4
       - name: Setup node
@@ -93,24 +93,24 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: yarn
-          cache-dependency-path: awrit-native-rs/yarn.lock
+          cache-dependency-path: cliweb-native-rs/yarn.lock
       - name: Install dependencies
         run: yarn install
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
-          path: awrit-native-rs/artifacts
+          path: cliweb-native-rs/artifacts
       - name: Get version
         id: get_version
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          echo "version=awrit-native-rs-${VERSION}" >> $GITHUB_OUTPUT
+          echo "version=cliweb-native-rs-${VERSION}" >> $GITHUB_OUTPUT
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ steps.get_version.outputs.version }}
           name: ${{ steps.get_version.outputs.version }}
-          artifacts: "awrit-native-rs/artifacts/**/*.node"
+          artifacts: "cliweb-native-rs/artifacts/**/*.node"
           allowUpdates: true
           makeLatest: true
           generateReleaseNotes: false
