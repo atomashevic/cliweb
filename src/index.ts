@@ -33,8 +33,7 @@ function loadConfig(config: typeof import('../config.js')) {
   }
 }
 
-const CONFIG_PATH = '../config.js';
-const CONFIG_PATH_RESOLVED = path.resolve(__dirname, CONFIG_PATH);
+const CONFIG_PATH_RESOLVED = process.env.CLIWEB_CONFIG_PATH ?? path.resolve(__dirname, '../config.js');
 loadConfig(require(CONFIG_PATH_RESOLVED));
 
 fs.watchFile(CONFIG_PATH_RESOLVED, { interval: 200 }, (curr, prev) => {

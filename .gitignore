@@ -5,3 +5,4 @@ out
 *.log*
 .bun
 cliweb_error.txt
+cliweb-native-rs/npm/*/LICENSE.txt

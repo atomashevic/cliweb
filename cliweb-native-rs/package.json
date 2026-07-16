@@ -1,9 +1,23 @@
 {
 	"name": "cliweb-native-rs",
-	"version": "2.0.3",
+	"version": "2.0.4",
 	"main": "index.js",
 	"types": "index.d.ts",
 	"license": "BSD-3-Clause",
+	"files": [
+		"index.js",
+		"index.d.ts",
+		"LICENSE.txt"
+	],
+	"engines": {
+		"node": ">=22.11.0"
+	},
+	"optionalDependencies": {
+		"cliweb-native-rs-darwin-arm64": "2.0.4",
+		"cliweb-native-rs-darwin-x64": "2.0.4",
+		"cliweb-native-rs-linux-arm64-gnu": "2.0.4",
+		"cliweb-native-rs-linux-x64-gnu": "2.0.4"
+	},
 	"napi": {
 		"binaryName": "cliweb-native-rs",
 		"targets": [
@@ -17,10 +31,10 @@
 		"@napi-rs/cli": "^3.1.5"
 	},
 	"scripts": {
-		"postinstall": "napi build --platform --release && ./run-shim scripts/fix-types.js",
 		"artifacts": "napi artifacts",
-		"make": "napi build --platform --release && ./run-shim scripts/fix-types.js",
+		"make": "napi build --platform --release && node scripts/fix-types.js",
 		"ci": "napi build --platform --release",
-		"make:debug": "napi build --platform"
+		"make:debug": "napi build --platform",
+		"stage:package": "node scripts/stage-package.js"
 	}
 }

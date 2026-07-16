@@ -14,7 +14,7 @@ export default {
   build: {
     outDir: '../../dist/toolbar',
     emptyOutDir: true,
-    sourcemap: true,
+    sourcemap: false,
     // Prevent `.node` being renamed to `[hash].node` in require('...')
     rollupOptions: {
       output: {
