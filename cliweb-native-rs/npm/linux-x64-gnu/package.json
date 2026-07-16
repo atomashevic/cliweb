@@ -1,0 +1,23 @@
+{
+  "name": "cliweb-native-rs-linux-x64-gnu",
+  "version": "2.0.4",
+  "description": "x64 GNU/Linux native bindings for cliweb",
+  "license": "BSD-3-Clause",
+  "main": "cliweb-native-rs.linux-x64-gnu.node",
+  "files": [
+    "cliweb-native-rs.linux-x64-gnu.node",
+    "LICENSE.txt"
+  ],
+  "os": [
+    "linux"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "libc": [
+    "glibc"
+  ],
+  "engines": {
+    "node": ">=22.11.0"
+  }
+}

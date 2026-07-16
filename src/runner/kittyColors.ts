@@ -14,8 +14,17 @@ const replacements: Record<string, string> = {
   background: 'kitty-bg',
 };
 
-type Color = [name: string, color: string];
+export type Color = [name: string, color: string];
 type QueryResponse = Array<Color> | undefined;
+
+export const DEFAULT_TOOLBAR_COLORS: Color[] = [
+  ['kitty-fg', '#d8dee9'],
+  ['kitty-bg', '#1e222a'],
+  ['active-border', '#5e81ac'],
+  ['selection-background', '#4c566a'],
+  ['selection-foreground', '#eceff4'],
+];
+
 export function queryColors(): Promise<QueryResponse> {
   const { promise, resolve } = Promise.withResolvers<QueryResponse>();
   process.stdin.setRawMode(true);
@@ -64,13 +73,6 @@ export function queryColors(): Promise<QueryResponse> {
 
 export function colorsToTailwind(colors: Color[]) {
   return `@theme {
-${colors.map(([name_, color]) => `  --color-${name_}: ${color};`).join('\n')}
+${colors.map(([name_, color]) => `  --color-${name_}: var(--cliweb-color-${name_}, ${color});`).join('\n')}
 }`;
-}
-
-// for running directly
-if (require.main === module) {
-  queryColors().then((x) => {
-    if (x) console.log(colorsToTailwind(x));
-  });
 }

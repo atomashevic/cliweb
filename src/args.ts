@@ -5,11 +5,9 @@ export const possibleOptions = {
 
   help: { short: 'h', description: 'Show help' },
   version: { short: 'v', description: 'Show version' },
-  dev: { short: 'd', description: 'Run in development mode' },
   'no-paint': { short: 'n', description: 'Disable painting' },
   transparent: { short: 't', description: 'Make the window transparent' },
   'debug-paint': { short: 'p', description: 'Debug paint' },
-  rebuild: { short: 'r', description: 'Rebuild the toolbar' },
 } as const;
 
 export type Option = keyof typeof possibleOptions;

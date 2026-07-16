@@ -13,6 +13,20 @@ Actual Chromium being rendered in your favorite terminal that supports the [Kitt
 - Tiled layout without a tiling window manager using [Kitty's layouts](https://sw.kovidgoyal.net/kitty/layouts/)
 - Add fancy UI using web technologies, so NeoVim can pretend it is Emacs instead of the other way around
 
+## Installation
+
+Install the published command globally with npm:
+
+```bash
+npm install --global cliweb
+```
+
+The npm package contains prebuilt application and toolbar assets. It does not
+build the TypeScript application on first launch.
+
+See [npm packaging](docs/NPM_PACKAGING.md) for the package layout and release
+workflow.
+
 ## Usage
 
 ```bash
@@ -44,7 +58,10 @@ supported.
 
 ## Configuration
 
-`cliweb` can be configured through `config.js` in the project root. Changes to it will update the config in any running `cliweb`.
+`cliweb` can be configured through `$XDG_CONFIG_HOME/cliweb/config.js`, or
+`~/.config/cliweb/config.js` when `XDG_CONFIG_HOME` is not set. The default
+configuration is copied there on first launch. Changes update any running
+`cliweb` process.
 
 Currently it only supports custom keybindings and changing the homepage that displays when no URL is provided.
 
@@ -56,11 +73,17 @@ See [Contributing to Cliweb](/CONTRIBUTING.md#contributing-to-cliweb).
 
 ## Development
 
-Assuming you already have `git` installed, your installation of `cliweb` will already be a Git repository.
+Clone the repository and run the local setup script:
 
-You can update `cliweb` to use your fork by changing the origin:
+```bash
+git clone https://github.com/atomashevic/cliweb.git
+cd cliweb
+./setup.sh
+```
 
-``` bash
+You can update your checkout to use another fork by changing the origin:
+
+```bash
 # note: you'll have to change the username some-kind-contributor to your GitHub username
 git remote set-url origin git@github.com:some-kind-contributor/cliweb.git
 # also track the upstream electron branch
