@@ -1,5 +1,61 @@
+import { execFileSync } from 'node:child_process';
+
 type StringLike = string | { toString(): string };
 export const ESC_CODE = '\x1B';
+
+type Point = { x: number; y: number };
+export type TmuxPaneOrigin = { left: number; top: number };
+
+let graphicsCursor: Point = { x: 0, y: 0 };
+let tmuxPaneOrigin: TmuxPaneOrigin | null | undefined;
+
+export function setGraphicsCursor(point: Point) {
+  graphicsCursor = point;
+}
+
+export function parseTmuxPaneOrigin(output: string): TmuxPaneOrigin | null {
+  const [leftValue, topValue, statusValue, statusPosition] = output.trim().split('\t');
+  const left = Number(leftValue);
+  const paneTop = Number(topValue);
+  if (!Number.isFinite(left) || !Number.isFinite(paneTop)) return null;
+
+  const statusRows =
+    statusValue === 'off' ? 0 : statusValue === 'on' ? 1 : Number(statusValue) || 1;
+  const top = paneTop + (statusPosition === 'top' ? statusRows : 0);
+  return { left, top };
+}
+
+function getTmuxPaneOrigin(): TmuxPaneOrigin | null {
+  if (tmuxPaneOrigin !== undefined) return tmuxPaneOrigin;
+  const pane = process.env.TMUX_PANE;
+  if (!pane) {
+    tmuxPaneOrigin = null;
+    return tmuxPaneOrigin;
+  }
+
+  try {
+    const output = execFileSync(
+      'tmux',
+      [
+        'display-message',
+        '-p',
+        '-t',
+        pane,
+        '#{pane_left}\t#{pane_top}\t#{status}\t#{status-position}',
+      ],
+      { encoding: 'utf8', timeout: 1_000 },
+    );
+    tmuxPaneOrigin = parseTmuxPaneOrigin(output);
+    return tmuxPaneOrigin;
+  } catch {
+    tmuxPaneOrigin = null;
+    return tmuxPaneOrigin;
+  }
+}
+
+export function invalidateTmuxPaneOrigin() {
+  tmuxPaneOrigin = undefined;
+}
 
 /**
  * Wrap an escape sequence in tmux's DCS passthrough envelope.
@@ -13,8 +69,18 @@ export function wrapTmuxPassthrough(sequence: string) {
   return `${ESC_CODE}Ptmux;${escapedSequence}${ESC_CODE}\\`;
 }
 
+export function anchorTmuxGraphics(sequence: string, origin: TmuxPaneOrigin, cursor: Point) {
+  const column = origin.left + Math.max(1, cursor.x);
+  const row = origin.top + Math.max(1, cursor.y);
+  return wrapTmuxPassthrough(`${ESC_CODE}7${ESC_CODE}[${row};${column}H${sequence}${ESC_CODE}8`);
+}
+
 export function graphicsPassthrough(sequence: string, insideTmux = process.env.TMUX !== undefined) {
-  return insideTmux ? wrapTmuxPassthrough(sequence) : sequence;
+  if (!insideTmux) return sequence;
+  const origin = getTmuxPaneOrigin();
+  return origin
+    ? anchorTmuxGraphics(sequence, origin, graphicsCursor)
+    : wrapTmuxPassthrough(sequence);
 }
 
 export function ESC(strings: TemplateStringsArray, ...args: StringLike[]) {

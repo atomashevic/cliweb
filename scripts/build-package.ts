@@ -17,6 +17,7 @@ await build({
   entryPoints: {
     index: join(root, 'src/index.ts'),
     preload: join(root, 'src/preload.js'),
+    'control/cli': join(root, 'src/control/cli.ts'),
     'runner/index': join(root, 'src/runner/index.ts'),
   },
   outdir: dist,
@@ -33,6 +34,7 @@ await build({
   ],
   sourcemap: false,
   define: {
+    'import.meta.main': 'true',
     'process.env.NODE_ENV': '"production"',
   },
 });
@@ -47,10 +49,11 @@ const vite = Bun.spawn(
 );
 if ((await vite.exited) !== 0) process.exit(1);
 
-const cliPath = join(dist, 'runner/index.js');
-const cli = await readFile(cliPath, 'utf8');
-if (!cli.startsWith('#!')) {
-  await writeFile(cliPath, `#!/usr/bin/env node\n${cli}`);
+for (const cliPath of [join(dist, 'runner/index.js'), join(dist, 'control/cli.js')]) {
+  const cli = await readFile(cliPath, 'utf8');
+  if (!cli.startsWith('#!')) {
+    await writeFile(cliPath, `#!/usr/bin/env node\n${cli}`);
+  }
+  await chmod(cliPath, 0o755);
 }
-await chmod(cliPath, 0o755);
 await writeFile(join(dist, 'version'), packageJson.version);

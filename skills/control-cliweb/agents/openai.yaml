@@ -1,0 +1,4 @@
+interface:
+  display_name: "Control cliweb"
+  short_description: "Control cliweb beside Codex in Kitty or tmux"
+  default_prompt: "Use $control-cliweb to open and control cliweb beside Codex using native Kitty or tmux."

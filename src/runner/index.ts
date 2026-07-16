@@ -49,7 +49,7 @@ if (options.version) {
 }
 
 async function readToolbarColors(): Promise<Color[]> {
-  if (!process.stdin.isTTY) return [];
+  if (options['no-paint'] || !process.stdin.isTTY) return [];
 
   const supportedNames = new Set(DEFAULT_TOOLBAR_COLORS.map(([name]) => name));
   for (let tries = 0; tries < 3; tries++) {
@@ -60,13 +60,13 @@ async function readToolbarColors(): Promise<Color[]> {
       // Keep the packaged fallback palette when the terminal does not answer.
     }
   }
-
   return [];
 }
 
 function prepareConfigPath(): string {
   const packagedConfig = join(root, 'config.js');
-  const configHome = process.env.XDG_CONFIG_HOME ??
+  const configHome =
+    process.env.XDG_CONFIG_HOME ??
     (process.env.HOME ? join(process.env.HOME, '.config') : undefined);
   if (!configHome) return packagedConfig;
 

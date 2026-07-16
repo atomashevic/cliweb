@@ -98,7 +98,11 @@ else
       unzip -oqd "$DOWNLOAD_TO" $zip_file ||
         error 'Failed to extract cliweb'
 
-      chmod +x "$DOWNLOAD_TO/setup.sh" "$DOWNLOAD_TO/cliweb"
+      chmod +x \
+        "$DOWNLOAD_TO/setup.sh" \
+        "$DOWNLOAD_TO/cliweb" \
+        "$DOWNLOAD_TO/cliwebctl" \
+        "$DOWNLOAD_TO/install-control-cliweb-skill"
       rm $zip_file
 fi
 
@@ -106,14 +110,16 @@ fi
 
 echo
 
-# Install link to $INSTALL_TO/bin/cliweb
-exe="$bin_dir/cliweb"
-if [[ ! -e $exe ]]; then
-  (cd "$bin_dir" && ln -s "$DOWNLOAD_TO/cliweb")
-else
-  info_bold "$(tildify $exe) already exists, skipping link install"
-  echo
-fi
+# Install command links.
+for command in cliweb cliwebctl; do
+  exe="$bin_dir/$command"
+  if [[ ! -e $exe ]]; then
+    (cd "$bin_dir" && ln -s "$DOWNLOAD_TO/$command")
+  else
+    info_bold "$(tildify $exe) already exists, skipping link install"
+    echo
+  fi
+done
 
 # Install path if necessary
 if [[ $add_to_path = false ]]; then
@@ -121,6 +127,7 @@ if [[ $add_to_path = false ]]; then
   echo
   info "To get started, run:"
   info_bold "  cliweb --help"
+  info_bold "  cliwebctl help"
   exit 0
 fi
 
@@ -248,3 +255,4 @@ if [[ $refresh_command ]]; then
 fi
 
 info_bold "  cliweb --help"
+info_bold "  cliwebctl help"

@@ -12,6 +12,7 @@ import {
   SAVE_COLORS,
   SAVE_CURSOR,
   SAVE_PRIVATE_MODE_VALUES,
+  setGraphicsCursor,
 } from './escapeCodes';
 import type { Point } from './graphics';
 const { stdout } = process;
@@ -29,6 +30,7 @@ export function requestWindowSize() {
 }
 
 export function placeCursor(point: Point = { x: 0, y: 0 }) {
+  setGraphicsCursor(point);
   stdout.write(CSI`${point.y};${point.x}H`);
 }
 

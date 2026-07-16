@@ -5,6 +5,8 @@ export const possibleOptions = {
 
   help: { short: 'h', description: 'Show help' },
   version: { short: 'v', description: 'Show version' },
+  control: { short: 'c', description: 'Enable authenticated local browser control' },
+  private: { short: 'I', description: 'Use a temporary private browsing session' },
   'no-paint': { short: 'n', description: 'Disable painting' },
   transparent: { short: 't', description: 'Make the window transparent' },
   'debug-paint': { short: 'p', description: 'Debug paint' },
