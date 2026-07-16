@@ -1,5 +1,22 @@
 type StringLike = string | { toString(): string };
 export const ESC_CODE = '\x1B';
+
+/**
+ * Wrap an escape sequence in tmux's DCS passthrough envelope.
+ *
+ * tmux requires every ESC byte in the inner sequence to be doubled. The outer
+ * DCS sequence is intentionally not applied to normal terminal controls: tmux
+ * must continue to handle cursor, keyboard, mouse, and screen state itself.
+ */
+export function wrapTmuxPassthrough(sequence: string) {
+  const escapedSequence = sequence.replaceAll(ESC_CODE, ESC_CODE + ESC_CODE);
+  return `${ESC_CODE}Ptmux;${escapedSequence}${ESC_CODE}\\`;
+}
+
+export function graphicsPassthrough(sequence: string, insideTmux = process.env.TMUX !== undefined) {
+  return insideTmux ? wrapTmuxPassthrough(sequence) : sequence;
+}
+
 export function ESC(strings: TemplateStringsArray, ...args: StringLike[]) {
   let ret = ESC_CODE;
   for (let n = 0; n < strings.length; n++) {
@@ -24,7 +41,7 @@ export function GFX(strings: TemplateStringsArray, ...args: StringLike[]) {
     ret += strings[n];
     if (n < args.length) ret += args[n];
   }
-  return ret + `${ESC_CODE}\\`;
+  return graphicsPassthrough(ret + `${ESC_CODE}\\`);
 }
 
 export function ParseGFXStatus(str: string) {

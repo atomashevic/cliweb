@@ -3,13 +3,13 @@ import type { Rect, Size } from './graphics';
 import { options } from '../args';
 import type { ShmGraphicBuffer } from 'cliweb-native-rs';
 import { placeCursor } from './output';
+import { ImageIdRegistry, type ImageId } from './imageIds';
 const { stdout } = process;
 
-let imageId_ = 1;
+const imageIds = new ImageIdRegistry();
 
-type ImageId = number & {};
 function imageId(): ImageId {
-  return imageId_++;
+  return imageIds.allocate();
 }
 
 const quiet = options['debug-paint'] ? '' : ',q=2';
@@ -95,10 +95,13 @@ function compositeFrame(
 }
 
 export function clearPlacements() {
-  stdout.write(GFX`a=d,d=A`);
+  for (const id of imageIds.activeIds()) {
+    freeImage(id);
+  }
 }
 
 function freeImage(id: ImageId) {
+  if (!imageIds.release(id)) return;
   // a=d,d=I delete image
   stdout.write(GFX`a=d,d=I,i=${id}`);
 }

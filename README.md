@@ -29,6 +29,19 @@ For more options look at the help:
 cliweb --help
 ```
 
+### tmux
+
+`cliweb` can render in a local tmux pane when passthrough is enabled:
+
+```tmux
+set -g allow-passthrough on
+```
+
+tmux 3.3 or newer is required for configurable passthrough, and tmux 3.6 or newer is recommended
+for reliable pane pixel dimensions. The tmux server and terminal emulator must run on the same
+machine because `cliweb` transfers frames through POSIX shared memory; tmux over SSH is not yet
+supported.
+
 ## Configuration
 
 `cliweb` can be configured through `config.js` in the project root. Changes to it will update the config in any running `cliweb`.

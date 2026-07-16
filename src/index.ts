@@ -110,7 +110,10 @@ function setup() {
     cleanup(1, 'Extended keyboard support is required');
   }
   if (!images) {
-    cleanup(1, 'Basic Kitty graphics protocol support is required');
+    const tmuxHint = process.env.TMUX
+      ? '; inside tmux, add `set -g allow-passthrough on` to tmux.conf'
+      : '';
+    cleanup(1, `Basic Kitty graphics protocol support is required${tmuxHint}`);
   }
 
   quitListening = listenForInput(inputHandler, 200);

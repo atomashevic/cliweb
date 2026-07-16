@@ -336,6 +336,33 @@ pub struct KittyGraphicsSupport {
     pub composite_frame: bool,
 }
 
+fn wrap_tmux_passthrough(sequence: &[u8]) -> Vec<u8> {
+    const ESC: u8 = 0x1b;
+    const PREFIX: &[u8] = b"\x1bPtmux;";
+    const SUFFIX: &[u8] = b"\x1b\\";
+
+    let escape_count = sequence.iter().filter(|byte| **byte == ESC).count();
+    let mut wrapped =
+        Vec::with_capacity(PREFIX.len() + sequence.len() + escape_count + SUFFIX.len());
+    wrapped.extend_from_slice(PREFIX);
+    for byte in sequence {
+        if *byte == ESC {
+            wrapped.push(ESC);
+        }
+        wrapped.push(*byte);
+    }
+    wrapped.extend_from_slice(SUFFIX);
+    wrapped
+}
+
+fn write_graphics_sequence(writer: &mut impl std::io::Write, sequence: &[u8]) -> io::Result<()> {
+    if std::env::var_os("TMUX").is_some() {
+        writer.write_all(&wrap_tmux_passthrough(sequence))
+    } else {
+        writer.write_all(sequence)
+    }
+}
+
 /// Query the terminal for Kitty Graphics Protocol support.
 /// Tests three capabilities:
 /// 1. Basic image loading (single white pixel)
@@ -349,13 +376,17 @@ pub fn query_kitty_graphics_support() -> io::Result<KittyGraphicsSupport> {
     use std::io::Write;
     use std::time::Duration;
 
+    // Keep probes in the upper half of the ID space; the TypeScript renderer
+    // reserves the lower half for process-owned application images.
+    let image_id = 0x80000000 | (std::process::id() & 0x7fffffff);
     // Test 1: Load basic image
     // Format=24 (RGB), t=d (direct), s=1 (size), v=1 (height), z=1 (width)
-    const LOAD_IMAGE: &[u8] = b"\x1B_Gf=24,i=4294111295,t=d,s=1,v=1,z=1;AAAA\x1B\\";
+    let load_image = format!("\x1B_Gf=24,i={image_id},t=d,s=1,v=1,z=1;AAAA\x1B\\");
     // Test 2: Load frame 2
-    const LOAD_FRAME: &[u8] = b"\x1B_Ga=f,i=4294111295,f=24,t=d,s=1,v=1,z=1,r=2;AAAA\x1B\\";
+    let load_frame = format!("\x1B_Ga=f,i={image_id},f=24,t=d,s=1,v=1,z=1,r=2;AAAA\x1B\\");
     // Test 3: Composite frame 2 onto frame 1
-    const COMPOSITE_FRAMES: &[u8] = b"\x1B_Ga=c,C=1,i=4294111295,r=2,c=1,x=0,y=0,w=1,h=1\x1B\\";
+    let composite_frames = format!("\x1B_Ga=c,C=1,i={image_id},r=2,c=1,x=0,y=0,w=1,h=1\x1B\\");
+    let delete_image = format!("\x1B_Ga=d,d=I,q=2,i={image_id}\x1B\\");
 
     let mut support = KittyGraphicsSupport {
         images: false,
@@ -367,7 +398,7 @@ pub fn query_kitty_graphics_support() -> io::Result<KittyGraphicsSupport> {
     let filter = KittyGraphicsFilter;
 
     // Test 1: Basic image loading
-    stdout.write_all(LOAD_IMAGE)?;
+    write_graphics_sequence(&mut stdout, load_image.as_bytes())?;
     stdout.flush()?;
 
     if poll_internal(Some(Duration::from_millis(100)), &filter)? {
@@ -378,7 +409,7 @@ pub fn query_kitty_graphics_support() -> io::Result<KittyGraphicsSupport> {
 
     if support.images {
         // Test 2: Frame loading
-        stdout.write_all(LOAD_FRAME)?;
+        write_graphics_sequence(&mut stdout, load_frame.as_bytes())?;
         stdout.flush()?;
 
         if poll_internal(Some(Duration::from_millis(100)), &filter)? {
@@ -391,7 +422,7 @@ pub fn query_kitty_graphics_support() -> io::Result<KittyGraphicsSupport> {
 
         if support.load_frame {
             // Test 3: Frame composition
-            stdout.write_all(COMPOSITE_FRAMES)?;
+            write_graphics_sequence(&mut stdout, composite_frames.as_bytes())?;
             stdout.flush()?;
 
             if poll_internal(Some(Duration::from_millis(100)), &filter)? {
@@ -404,5 +435,20 @@ pub fn query_kitty_graphics_support() -> io::Result<KittyGraphicsSupport> {
         }
     }
 
+    write_graphics_sequence(&mut stdout, delete_image.as_bytes())?;
+    stdout.flush()?;
+
     Ok(support)
+}
+
+#[cfg(test)]
+mod kitty_graphics_tests {
+    use super::wrap_tmux_passthrough;
+
+    #[test]
+    fn tmux_passthrough_doubles_inner_escape_bytes() {
+        let sequence = b"\x1b_Ga=q,i=7;AAAA\x1b\\";
+        let expected = b"\x1bPtmux;\x1b\x1b_Ga=q,i=7;AAAA\x1b\x1b\\\x1b\\";
+        assert_eq!(wrap_tmux_passthrough(sequence), expected);
+    }
 }
