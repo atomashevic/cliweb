@@ -83,6 +83,17 @@ function prepareConfigPath(): string {
 }
 
 async function main() {
+  if (process.platform === 'linux') {
+    try {
+      const sandbox = require(join(root, 'scripts/configure-sandbox.js')) as {
+        configureSandbox: () => boolean;
+      };
+      sandbox.configureSandbox();
+    } catch (error) {
+      console.warn(`Unable to configure the Chromium sandbox: ${String(error)}`);
+    }
+  }
+
   const electronPath = require('electron') as string;
   const electronArgs = [join(root, 'dist/index.js'), '--high-dpi-support=1'];
 

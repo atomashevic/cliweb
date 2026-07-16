@@ -41,6 +41,12 @@ The installed launcher reads terminal colors, passes them to Electron through
 the environment, and applies them as CSS custom properties. This preserves the
 terminal-specific toolbar palette without rebuilding assets on first launch.
 
+On Linux, the launcher also reruns the sandbox setup hook immediately before
+starting Electron. npm may execute the cliweb and Electron postinstall scripts
+concurrently, so the install-time hook can finish before Electron creates its
+helper. The runtime check repairs that race while retaining Chromium's setuid
+sandbox.
+
 ## Runtime configuration
 
 On first launch, the packaged `config.js` is copied to:
