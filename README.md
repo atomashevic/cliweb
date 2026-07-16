@@ -1,19 +1,8 @@
-I no longer have time to maintain my hobby projects and with the rising number of security issues, I would advise you to look at a more actively maintained fork.
-
-If you use macOS you might enjoy using [cmux](https://github.com/manaflow-ai/cmux) as a replacement for cliweb.
-
----
-
-# Actual Web Rendering in Terminal
+# CLI Web Browser
 
 Or just `cliweb`.
 
-See [the rebrand and installation notes](docs/REBRAND.md) for the complete
-identity, packaging, installer, and Linux runtime changes.
-
-[cliweb-demo.webm](https://github.com/user-attachments/assets/5da3fffc-d781-4b00-9fe3-19ce18d01a7e)
-
-Yep, actual Chromium being rendered in your favorite terminal that supports the [Kitty terminal graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/).
+Actual Chromium being rendered in your favorite terminal that supports the [Kitty terminal graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/).
 
 **`cliweb` works best in [Kitty v0.31 or newer](https://github.com/kovidgoyal/kitty/releases)**
 
