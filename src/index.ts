@@ -100,6 +100,7 @@ function setup() {
   const cleanup_ = () => cleanup();
   process.on('SIGINT', () => cleanup(0));
   process.on('SIGTERM', cleanup_);
+  process.on('SIGHUP', cleanup_);
   process.on('SIGABRT', cleanup_);
 
   out.setup();

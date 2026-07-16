@@ -103,7 +103,7 @@ async function main() {
     },
   });
 
-  const forwardedSignals = ['SIGINT', 'SIGTERM'] as const;
+  const forwardedSignals = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const;
   for (const signal of forwardedSignals) {
     process.once(signal, () => {
       if (!child.killed) child.kill(signal);
