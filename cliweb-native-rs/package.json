@@ -1,11 +1,11 @@
 {
-	"name": "awrit-native-rs",
+	"name": "cliweb-native-rs",
 	"version": "2.0.3",
 	"main": "index.js",
 	"types": "index.d.ts",
 	"license": "BSD-3-Clause",
 	"napi": {
-		"binaryName": "awrit-native-rs",
+		"binaryName": "cliweb-native-rs",
 		"targets": [
 			"aarch64-apple-darwin",
 			"x86_64-apple-darwin",
@@ -17,7 +17,7 @@
 		"@napi-rs/cli": "^3.1.5"
 	},
 	"scripts": {
-		"postinstall": "./run-shim scripts/download-binary.js",
+		"postinstall": "napi build --platform --release && ./run-shim scripts/fix-types.js",
 		"artifacts": "napi artifacts",
 		"make": "napi build --platform --release && ./run-shim scripts/fix-types.js",
 		"ci": "napi build --platform --release",

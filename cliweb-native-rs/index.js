@@ -73,13 +73,13 @@ function requireNative() {
   } else if (process.platform === 'android') {
     if (process.arch === 'arm64') {
       try {
-        return require('./awrit-native-rs.android-arm64.node')
+        return require('./cliweb-native-rs.android-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-android-arm64')
-        const bindingPackageVersion = require('awrit-native-rs-android-arm64/package.json').version
+        const binding = require('cliweb-native-rs-android-arm64')
+        const bindingPackageVersion = require('cliweb-native-rs-android-arm64/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -89,13 +89,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm') {
       try {
-        return require('./awrit-native-rs.android-arm-eabi.node')
+        return require('./cliweb-native-rs.android-arm-eabi.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-android-arm-eabi')
-        const bindingPackageVersion = require('awrit-native-rs-android-arm-eabi/package.json').version
+        const binding = require('cliweb-native-rs-android-arm-eabi')
+        const bindingPackageVersion = require('cliweb-native-rs-android-arm-eabi/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -109,13 +109,13 @@ function requireNative() {
   } else if (process.platform === 'win32') {
     if (process.arch === 'x64') {
       try {
-        return require('./awrit-native-rs.win32-x64-msvc.node')
+        return require('./cliweb-native-rs.win32-x64-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-win32-x64-msvc')
-        const bindingPackageVersion = require('awrit-native-rs-win32-x64-msvc/package.json').version
+        const binding = require('cliweb-native-rs-win32-x64-msvc')
+        const bindingPackageVersion = require('cliweb-native-rs-win32-x64-msvc/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -125,13 +125,13 @@ function requireNative() {
       }
     } else if (process.arch === 'ia32') {
       try {
-        return require('./awrit-native-rs.win32-ia32-msvc.node')
+        return require('./cliweb-native-rs.win32-ia32-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-win32-ia32-msvc')
-        const bindingPackageVersion = require('awrit-native-rs-win32-ia32-msvc/package.json').version
+        const binding = require('cliweb-native-rs-win32-ia32-msvc')
+        const bindingPackageVersion = require('cliweb-native-rs-win32-ia32-msvc/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -141,13 +141,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./awrit-native-rs.win32-arm64-msvc.node')
+        return require('./cliweb-native-rs.win32-arm64-msvc.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-win32-arm64-msvc')
-        const bindingPackageVersion = require('awrit-native-rs-win32-arm64-msvc/package.json').version
+        const binding = require('cliweb-native-rs-win32-arm64-msvc')
+        const bindingPackageVersion = require('cliweb-native-rs-win32-arm64-msvc/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -160,13 +160,13 @@ function requireNative() {
     }
   } else if (process.platform === 'darwin') {
     try {
-      return require('./awrit-native-rs.darwin-universal.node')
+      return require('./cliweb-native-rs.darwin-universal.node')
     } catch (e) {
       loadErrors.push(e)
     }
     try {
-      const binding = require('awrit-native-rs-darwin-universal')
-      const bindingPackageVersion = require('awrit-native-rs-darwin-universal/package.json').version
+      const binding = require('cliweb-native-rs-darwin-universal')
+      const bindingPackageVersion = require('cliweb-native-rs-darwin-universal/package.json').version
       if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
         throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
       }
@@ -176,13 +176,13 @@ function requireNative() {
     }
     if (process.arch === 'x64') {
       try {
-        return require('./awrit-native-rs.darwin-x64.node')
+        return require('./cliweb-native-rs.darwin-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-darwin-x64')
-        const bindingPackageVersion = require('awrit-native-rs-darwin-x64/package.json').version
+        const binding = require('cliweb-native-rs-darwin-x64')
+        const bindingPackageVersion = require('cliweb-native-rs-darwin-x64/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -192,13 +192,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./awrit-native-rs.darwin-arm64.node')
+        return require('./cliweb-native-rs.darwin-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-darwin-arm64')
-        const bindingPackageVersion = require('awrit-native-rs-darwin-arm64/package.json').version
+        const binding = require('cliweb-native-rs-darwin-arm64')
+        const bindingPackageVersion = require('cliweb-native-rs-darwin-arm64/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -212,13 +212,13 @@ function requireNative() {
   } else if (process.platform === 'freebsd') {
     if (process.arch === 'x64') {
       try {
-        return require('./awrit-native-rs.freebsd-x64.node')
+        return require('./cliweb-native-rs.freebsd-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-freebsd-x64')
-        const bindingPackageVersion = require('awrit-native-rs-freebsd-x64/package.json').version
+        const binding = require('cliweb-native-rs-freebsd-x64')
+        const bindingPackageVersion = require('cliweb-native-rs-freebsd-x64/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -228,13 +228,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm64') {
       try {
-        return require('./awrit-native-rs.freebsd-arm64.node')
+        return require('./cliweb-native-rs.freebsd-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-freebsd-arm64')
-        const bindingPackageVersion = require('awrit-native-rs-freebsd-arm64/package.json').version
+        const binding = require('cliweb-native-rs-freebsd-arm64')
+        const bindingPackageVersion = require('cliweb-native-rs-freebsd-arm64/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -249,13 +249,13 @@ function requireNative() {
     if (process.arch === 'x64') {
       if (isMusl()) {
         try {
-          return require('./awrit-native-rs.linux-x64-musl.node')
+          return require('./cliweb-native-rs.linux-x64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('awrit-native-rs-linux-x64-musl')
-          const bindingPackageVersion = require('awrit-native-rs-linux-x64-musl/package.json').version
+          const binding = require('cliweb-native-rs-linux-x64-musl')
+          const bindingPackageVersion = require('cliweb-native-rs-linux-x64-musl/package.json').version
           if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -265,13 +265,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./awrit-native-rs.linux-x64-gnu.node')
+          return require('./cliweb-native-rs.linux-x64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('awrit-native-rs-linux-x64-gnu')
-          const bindingPackageVersion = require('awrit-native-rs-linux-x64-gnu/package.json').version
+          const binding = require('cliweb-native-rs-linux-x64-gnu')
+          const bindingPackageVersion = require('cliweb-native-rs-linux-x64-gnu/package.json').version
           if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -283,13 +283,13 @@ function requireNative() {
     } else if (process.arch === 'arm64') {
       if (isMusl()) {
         try {
-          return require('./awrit-native-rs.linux-arm64-musl.node')
+          return require('./cliweb-native-rs.linux-arm64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('awrit-native-rs-linux-arm64-musl')
-          const bindingPackageVersion = require('awrit-native-rs-linux-arm64-musl/package.json').version
+          const binding = require('cliweb-native-rs-linux-arm64-musl')
+          const bindingPackageVersion = require('cliweb-native-rs-linux-arm64-musl/package.json').version
           if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -299,13 +299,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./awrit-native-rs.linux-arm64-gnu.node')
+          return require('./cliweb-native-rs.linux-arm64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('awrit-native-rs-linux-arm64-gnu')
-          const bindingPackageVersion = require('awrit-native-rs-linux-arm64-gnu/package.json').version
+          const binding = require('cliweb-native-rs-linux-arm64-gnu')
+          const bindingPackageVersion = require('cliweb-native-rs-linux-arm64-gnu/package.json').version
           if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -317,13 +317,13 @@ function requireNative() {
     } else if (process.arch === 'arm') {
       if (isMusl()) {
         try {
-          return require('./awrit-native-rs.linux-arm-musleabihf.node')
+          return require('./cliweb-native-rs.linux-arm-musleabihf.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('awrit-native-rs-linux-arm-musleabihf')
-          const bindingPackageVersion = require('awrit-native-rs-linux-arm-musleabihf/package.json').version
+          const binding = require('cliweb-native-rs-linux-arm-musleabihf')
+          const bindingPackageVersion = require('cliweb-native-rs-linux-arm-musleabihf/package.json').version
           if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -333,13 +333,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./awrit-native-rs.linux-arm-gnueabihf.node')
+          return require('./cliweb-native-rs.linux-arm-gnueabihf.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('awrit-native-rs-linux-arm-gnueabihf')
-          const bindingPackageVersion = require('awrit-native-rs-linux-arm-gnueabihf/package.json').version
+          const binding = require('cliweb-native-rs-linux-arm-gnueabihf')
+          const bindingPackageVersion = require('cliweb-native-rs-linux-arm-gnueabihf/package.json').version
           if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -351,13 +351,13 @@ function requireNative() {
     } else if (process.arch === 'riscv64') {
       if (isMusl()) {
         try {
-          return require('./awrit-native-rs.linux-riscv64-musl.node')
+          return require('./cliweb-native-rs.linux-riscv64-musl.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('awrit-native-rs-linux-riscv64-musl')
-          const bindingPackageVersion = require('awrit-native-rs-linux-riscv64-musl/package.json').version
+          const binding = require('cliweb-native-rs-linux-riscv64-musl')
+          const bindingPackageVersion = require('cliweb-native-rs-linux-riscv64-musl/package.json').version
           if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -367,13 +367,13 @@ function requireNative() {
         }
       } else {
         try {
-          return require('./awrit-native-rs.linux-riscv64-gnu.node')
+          return require('./cliweb-native-rs.linux-riscv64-gnu.node')
         } catch (e) {
           loadErrors.push(e)
         }
         try {
-          const binding = require('awrit-native-rs-linux-riscv64-gnu')
-          const bindingPackageVersion = require('awrit-native-rs-linux-riscv64-gnu/package.json').version
+          const binding = require('cliweb-native-rs-linux-riscv64-gnu')
+          const bindingPackageVersion = require('cliweb-native-rs-linux-riscv64-gnu/package.json').version
           if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
             throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
           }
@@ -384,13 +384,13 @@ function requireNative() {
       }
     } else if (process.arch === 'ppc64') {
       try {
-        return require('./awrit-native-rs.linux-ppc64-gnu.node')
+        return require('./cliweb-native-rs.linux-ppc64-gnu.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-linux-ppc64-gnu')
-        const bindingPackageVersion = require('awrit-native-rs-linux-ppc64-gnu/package.json').version
+        const binding = require('cliweb-native-rs-linux-ppc64-gnu')
+        const bindingPackageVersion = require('cliweb-native-rs-linux-ppc64-gnu/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -400,13 +400,13 @@ function requireNative() {
       }
     } else if (process.arch === 's390x') {
       try {
-        return require('./awrit-native-rs.linux-s390x-gnu.node')
+        return require('./cliweb-native-rs.linux-s390x-gnu.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-linux-s390x-gnu')
-        const bindingPackageVersion = require('awrit-native-rs-linux-s390x-gnu/package.json').version
+        const binding = require('cliweb-native-rs-linux-s390x-gnu')
+        const bindingPackageVersion = require('cliweb-native-rs-linux-s390x-gnu/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -420,13 +420,13 @@ function requireNative() {
   } else if (process.platform === 'openharmony') {
     if (process.arch === 'arm64') {
       try {
-        return require('./awrit-native-rs.openharmony-arm64.node')
+        return require('./cliweb-native-rs.openharmony-arm64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-openharmony-arm64')
-        const bindingPackageVersion = require('awrit-native-rs-openharmony-arm64/package.json').version
+        const binding = require('cliweb-native-rs-openharmony-arm64')
+        const bindingPackageVersion = require('cliweb-native-rs-openharmony-arm64/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -436,13 +436,13 @@ function requireNative() {
       }
     } else if (process.arch === 'x64') {
       try {
-        return require('./awrit-native-rs.openharmony-x64.node')
+        return require('./cliweb-native-rs.openharmony-x64.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-openharmony-x64')
-        const bindingPackageVersion = require('awrit-native-rs-openharmony-x64/package.json').version
+        const binding = require('cliweb-native-rs-openharmony-x64')
+        const bindingPackageVersion = require('cliweb-native-rs-openharmony-x64/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -452,13 +452,13 @@ function requireNative() {
       }
     } else if (process.arch === 'arm') {
       try {
-        return require('./awrit-native-rs.openharmony-arm.node')
+        return require('./cliweb-native-rs.openharmony-arm.node')
       } catch (e) {
         loadErrors.push(e)
       }
       try {
-        const binding = require('awrit-native-rs-openharmony-arm')
-        const bindingPackageVersion = require('awrit-native-rs-openharmony-arm/package.json').version
+        const binding = require('cliweb-native-rs-openharmony-arm')
+        const bindingPackageVersion = require('cliweb-native-rs-openharmony-arm/package.json').version
         if (bindingPackageVersion !== '2.0.3' && process.env.NAPI_RS_ENFORCE_VERSION_CHECK && process.env.NAPI_RS_ENFORCE_VERSION_CHECK !== '0') {
           throw new Error(`Native binding package version mismatch, expected 2.0.3 but got ${bindingPackageVersion}. You can reinstall dependencies to fix this issue.`)
         }
@@ -478,7 +478,7 @@ nativeBinding = requireNative()
 
 if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
   try {
-    nativeBinding = require('./awrit-native-rs.wasi.cjs')
+    nativeBinding = require('./cliweb-native-rs.wasi.cjs')
   } catch (err) {
     if (process.env.NAPI_RS_FORCE_WASI) {
       loadErrors.push(err)
@@ -486,7 +486,7 @@ if (!nativeBinding || process.env.NAPI_RS_FORCE_WASI) {
   }
   if (!nativeBinding) {
     try {
-      nativeBinding = require('awrit-native-rs-wasm32-wasi')
+      nativeBinding = require('cliweb-native-rs-wasm32-wasi')
     } catch (err) {
       if (process.env.NAPI_RS_FORCE_WASI) {
         loadErrors.push(err)

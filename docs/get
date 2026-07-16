@@ -3,10 +3,10 @@ set -euo pipefail
 
 # Based off of https://bun.sh/install
 
-DOWNLOAD_TO=${DOWNLOAD_TO-"$HOME/awrit"}
+DOWNLOAD_TO=${DOWNLOAD_TO-"$HOME/cliweb"}
 INSTALL_TO=${INSTALL_TO-"$HOME/.local"}
 
-REPO='https://github.com/chase/awrit'
+REPO='https://github.com/atomashevic/cliweb'
 BRANCH='electron'
 ZIP="${BRANCH}.zip"
 ZIP_URI="$REPO/archive/refs/heads/$ZIP"
@@ -74,20 +74,20 @@ fi
 
 if which git >/dev/null; then
   if [[ -d "$DOWNLOAD_TO" ]]; then
-    info_bold "Updating awrit using git"
-    (cd "$DOWNLOAD_TO" && (git pull || error "Failed to pull awrit in \"$DOWNLOAD_TO\""))
+    info_bold "Updating cliweb using git"
+    (cd "$DOWNLOAD_TO" && (git pull || error "Failed to pull cliweb in \"$DOWNLOAD_TO\""))
   else
-    info_bold "Downloading awrit using git"
-    git clone $REPO $DOWNLOAD_TO || error "Failed to clone awrit to \"$DOWNLOAD_TO\""
+    info_bold "Downloading cliweb using git"
+    git clone $REPO $DOWNLOAD_TO || error "Failed to clone cliweb to \"$DOWNLOAD_TO\""
   fi
 else
   info_bold ""
-  command -v unzip >/dev/null || error 'unzip is required to install awrit'
-  mkdir -p "$bin_dir" || error "Failed to create awrit directory \"$DOWNLOAD_TO\""
+  command -v unzip >/dev/null || error 'unzip is required to install cliweb'
+  mkdir -p "$bin_dir" || error "Failed to create cliweb directory \"$DOWNLOAD_TO\""
 
   zip_file="$DOWNLOAD_TO/$ZIP"
   curl --fail --location --progress-bar --output $zip_file "$ZIP_URI" ||
-    error "Failed to download awrit from \"$ZIP_URI\""
+    error "Failed to download cliweb from \"$ZIP_URI\""
       config_path="$DOWNLOAD_TO/config.js"
       config_exists=false
       if [[ -f $config_path ]]; then
@@ -96,34 +96,20 @@ else
       fi
 
       unzip -oqd "$DOWNLOAD_TO" $zip_file ||
-        error 'Failed to extract awrit'
+        error 'Failed to extract cliweb'
 
-      chmod +x "$DOWNLOAD_TO/setup.sh" "$DOWNLOAD_TO/awrit"
+      chmod +x "$DOWNLOAD_TO/setup.sh" "$DOWNLOAD_TO/cliweb"
       rm $zip_file
 fi
 
-mkdir -p $DOWNLOAD_TO/node_modules
-(cd $DOWNLOAD_TO && bash setup.sh)
-rmdir $DOWNLOAD_TO/node_modules &>/dev/null || true
-
-BUN_INSTALL_DIR=$DOWNLOAD_TO/.bun/bin
-BUN_EXE=$BUN_INSTALL_DIR/bun
-
-# Install/update awrit-native-rs and Bun dependencies
-(cd "$DOWNLOAD_TO/awrit-native-rs" && "$BUN_EXE" scripts/download-binary.js)
-(cd $DOWNLOAD_TO && "$BUN_EXE" install)
+(cd "$DOWNLOAD_TO" && bash setup.sh)
 
 echo
 
-# Patch Electron.app to not display in the Dock, because it seems odd
-if [ "$(uname -s)" = "Darwin" ]; then
-  sed -i '' 's/<\/dict>/    <key>LSUIElement<\/key>\n    <true\/>\n<\/dict>/' "$DOWNLOAD_TO/node_modules/electron/dist/Electron.app/Contents/Info.plist" || true
-fi
-
-# Install link to $INSTALL_TO/bin/awrit
-exe="$bin_dir/awrit"
+# Install link to $INSTALL_TO/bin/cliweb
+exe="$bin_dir/cliweb"
 if [[ ! -e $exe ]]; then
-  (cd "$bin_dir" && ln -s "$DOWNLOAD_TO/awrit")
+  (cd "$bin_dir" && ln -s "$DOWNLOAD_TO/cliweb")
 else
   info_bold "$(tildify $exe) already exists, skipping link install"
   echo
@@ -131,10 +117,10 @@ fi
 
 # Install path if necessary
 if [[ $add_to_path = false ]]; then
-  success "awrit was successfully installed to $Bold_Green$(tildify $DOWNLOAD_TO)"
+  success "cliweb was successfully installed to $Bold_Green$(tildify $DOWNLOAD_TO)"
   echo
   info "To get started, run:"
-  info_bold "  awrit --help"
+  info_bold "  cliweb --help"
   exit 0
 fi
 
@@ -154,7 +140,7 @@ case $(basename "$SHELL") in
 
     if [[ -w $fish_config ]]; then
       {
-        echo -e '\n# awrit'
+        echo -e '\n# cliweb'
 
         for command in "${commands[@]}"; do
           echo "$command"
@@ -182,7 +168,7 @@ case $(basename "$SHELL") in
 
     if [[ -w $zsh_config ]]; then
       {
-        echo -e '\n# awrit'
+        echo -e '\n# cliweb'
 
         for command in "${commands[@]}"; do
           echo "$command"
@@ -225,7 +211,7 @@ case $(basename "$SHELL") in
 
       if [[ -w $bash_config ]]; then
         {
-          echo -e '\n# awrit'
+          echo -e '\n# cliweb'
 
           for command in "${commands[@]}"; do
             echo "$command"
@@ -261,4 +247,4 @@ if [[ $refresh_command ]]; then
   info_bold "  $refresh_command"
 fi
 
-info_bold "  awrit --help"
+info_bold "  cliweb --help"

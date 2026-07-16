@@ -8,6 +8,6 @@ updates:
     schedule:
       interval: "weekly"
   - package-ecosystem: "cargo" 
-    directory: "/awrit-native-rs"
+    directory: "/cliweb-native-rs"
     schedule:
       interval: "weekly"

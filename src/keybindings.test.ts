@@ -1,6 +1,6 @@
 import { describe, expect, test, beforeEach } from 'bun:test';
 import { loadKeyBindings, handleEvent } from './keybindings';
-import type { TermEvent } from 'awrit-native-rs';
+import type { TermEvent } from 'cliweb-native-rs';
 import { fakeTimers } from './fake-timers.test';
 
 describe('Keybindings System', () => {
