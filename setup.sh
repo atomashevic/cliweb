@@ -87,6 +87,8 @@ if [ ! -d "$BUN_INSTALL_DIR" ]; then
 fi
 
 "$BUN_EXE" install
+"$BUN_EXE" run build:native
+"$BUN_EXE" run build
 
 if [ "$(uname -s)" = "Linux" ]; then
   electron_sandbox="$BASE_DIR/node_modules/electron/dist/chrome-sandbox"

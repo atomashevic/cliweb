@@ -1,10 +1,11 @@
+#!/usr/bin/env node
+
+import { spawn, type ChildProcess } from 'node:child_process';
+import { copyFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 import { possibleOptions, options } from '../args';
-import { $, type Subprocess } from 'bun';
-import electronPath from 'electron';
-import { resolve, join } from 'node:path';
-import { colorsToTailwind, queryColors } from './kittyColors';
-import { server } from './devServer';
 import { getDisplayScale } from '../dpi';
+import { DEFAULT_TOOLBAR_COLORS, queryColors, type Color } from './kittyColors';
 
 const { stdout } = process;
 
@@ -12,6 +13,11 @@ const RESET = '\x1b[0m';
 const DIM_WHITE = '\x1b[0;2m';
 const BOLD_GREEN = '\x1b[1;32m';
 const BOLD_WHITE = '\x1b[1m';
+
+const root = resolve(__dirname, '../../');
+const packageJson = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')) as {
+  version: string;
+};
 
 export function showHelp() {
   stdout.write(RESET);
@@ -34,130 +40,95 @@ if (options.help) {
 }
 
 if (options.version) {
-  const version = (await $`git rev-parse --short HEAD`.quiet()).text().trim();
   if (stdout.isTTY) {
-    stdout.write(`${BOLD_GREEN}cliweb${RESET} ${version}\n`);
+    stdout.write(`${BOLD_GREEN}cliweb${RESET} ${packageJson.version}\n`);
   } else {
-    stdout.write(version);
+    stdout.write(packageJson.version);
   }
   process.exit(0);
 }
 
-const root = resolve(__dirname, '../../');
-await $`mkdir -p ${root}/dist`.nothrow().quiet();
+async function readToolbarColors(): Promise<Color[]> {
+  if (!process.stdin.isTTY) return [];
 
-{
-  const { success } = await Bun.build({
-    entrypoints: [join(root, 'src/index.ts'), join(root, 'src/preload.js')],
-    outdir: join(root, 'dist'),
-    root: join(root, 'src'),
-    target: 'node',
-    format: 'cjs',
-    sourcemap: 'inline',
-    external: ['electron', '../config.js', '*.node'],
-  });
-
-  if (!success) {
-    console.error('Failed to build');
-    process.exit(1);
-  }
-}
-
-const version = require(join(root, 'package.json')).version;
-const distVersion = Bun.file(join(root, 'dist/version'));
-
-if (!(await distVersion.exists()) || (await distVersion.text()) !== version || options.rebuild) {
-  console.error('building toolbar');
-  let didQueryColors = false;
-  for (let tries = 0; !didQueryColors && tries < 3; tries++) {
+  const supportedNames = new Set(DEFAULT_TOOLBAR_COLORS.map(([name]) => name));
+  for (let tries = 0; tries < 3; tries++) {
     try {
-      process.stdin.setRawMode(true);
       const colors = await queryColors();
-      process.stdin.setRawMode(false);
-      if (!colors) {
-        console.error('Failed to query terminal colors');
-      } else {
-        await Bun.write(join(root, 'dist/kitty.css'), colorsToTailwind(colors));
-        didQueryColors = true;
-      }
+      if (colors) return colors.filter(([name]) => supportedNames.has(name));
     } catch {
-      console.error('Failed to query terminal colors');
+      // Keep the packaged fallback palette when the terminal does not answer.
     }
   }
-  // TODO: figure out why this isn't reliable for some users
-  if (!didQueryColors) {
-    // empty placeholder required for building in case of failure
-    await Bun.write(join(root, 'dist/kitty.css'), '');
-  }
 
+  return [];
+}
+
+function prepareConfigPath(): string {
+  const packagedConfig = join(root, 'config.js');
+  const configHome = process.env.XDG_CONFIG_HOME ??
+    (process.env.HOME ? join(process.env.HOME, '.config') : undefined);
+  if (!configHome) return packagedConfig;
+
+  const configDirectory = join(configHome, 'cliweb');
+  const userConfig = join(configDirectory, 'config.js');
   try {
-    await $`bun ${join(root, 'node_modules/vite/bin/vite.js')} build`.cwd(join(root, 'src/runner'));
-  } catch (e) {
-    const e_ = e as any;
-    console.error(e_.stderr.toString());
-    process.exit(1);
+    mkdirSync(configDirectory, { recursive: true });
+    if (!existsSync(userConfig)) copyFileSync(packagedConfig, userConfig);
+    return userConfig;
+  } catch {
+    console.warn(`Unable to prepare ${userConfig}; using the packaged defaults`);
+    return packagedConfig;
   }
-
-  distVersion.write(version);
 }
 
-const children: [string, Subprocess][] = [];
-const isDev = options.dev;
+async function main() {
+  const electronPath = require('electron') as string;
+  const electronArgs = [join(root, 'dist/index.js'), '--high-dpi-support=1'];
 
-if (isDev) {
-  await server.listen();
-}
+  const forcedDisplayScale = getDisplayScale();
+  if (forcedDisplayScale) {
+    electronArgs.push(`--force-device-scale-factor=${forcedDisplayScale}`);
+  }
+  electronArgs.push(...process.argv.slice(2));
 
-const args = [
-  // electronPath is not the electron module, it's the path to the electron executable, despite what TS thinks
-  electronPath as unknown as string,
-  join(root, 'dist/index.js'),
-  '--high-dpi-support=1',
-];
-
-// Kitty respects the virtual scale size, while other terminals respect the physical scale size, which confuses things
-const forcedDisplayScale = getDisplayScale();
-if (forcedDisplayScale) {
-  args.push(`--force-device-scale-factor=${forcedDisplayScale}`);
-}
-args.push(...process.argv.slice(2));
-
-children.push([
-  'electron',
-  Bun.spawn(
-    // electronPath is not the electron module, it's the path to the electron executable, despite what TS thinks
-    args,
-    {
-      stdio: ['inherit', 'inherit', 'inherit'],
-      serialization: 'json',
-      ipc(message, subprocess) {
-        // TODO: do cool stuff with IPC between bun and the electron process
-      },
-      windowsHide: true,
-      onExit() {
-        destroyAllSubprocesses();
-      },
+  const toolbarColors = await readToolbarColors();
+  const child: ChildProcess = spawn(electronPath, electronArgs, {
+    stdio: 'inherit',
+    windowsHide: true,
+    env: {
+      ...process.env,
+      CLIWEB_CONFIG_PATH: prepareConfigPath(),
+      CLIWEB_TOOLBAR_COLORS: JSON.stringify(toolbarColors),
     },
-  ),
-]);
+  });
 
-function destroySubprocess(name: string, child: Subprocess) {
-  if (child.killed) return;
-  console.error('destroying', name);
-  child.kill();
+  const forwardedSignals = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const;
+  for (const signal of forwardedSignals) {
+    process.once(signal, () => {
+      if (!child.killed) child.kill(signal);
+    });
+  }
+
+  child.once('error', (error) => {
+    console.error(`Failed to start Electron: ${error.message}`);
+    process.exitCode = 1;
+  });
+
+  child.once('exit', (code, signal) => {
+    for (const forwardedSignal of forwardedSignals) {
+      process.removeAllListeners(forwardedSignal);
+    }
+
+    if (signal) {
+      process.kill(process.pid, signal);
+      return;
+    }
+    process.exitCode = code ?? 1;
+  });
 }
 
-function destroyAllSubprocesses() {
-  for (const [name, child] of children) {
-    destroySubprocess(name, child);
-  }
-  if (isDev) {
-    console.error('stopping dev server');
-    server.close();
-  }
-  process.exit(0);
-}
-
-process.on('SIGINT', destroyAllSubprocesses);
-process.on('SIGTERM', destroyAllSubprocesses);
-process.on('SIGHUP', destroyAllSubprocesses);
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});

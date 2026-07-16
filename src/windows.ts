@@ -13,7 +13,6 @@ import { paintInitialFrame } from './tty/kittyGraphics';
 import { getWindowSize, ShmGraphicBuffer } from 'cliweb-native-rs';
 import { options } from './args';
 import { console_ } from './console';
-import { TOOLBAR_PORT } from './runner/ports';
 import {
   layout,
   row,
@@ -54,6 +53,33 @@ export const focusedView: {
 export const windowViews = new WeakMap<BrowserWindow, WindowView>();
 
 const TOOLBAR_HEIGHT = 40;
+
+function applyToolbarColors(toolbar: BrowserWindow) {
+  let colors: unknown = [];
+  try {
+    colors = JSON.parse(process.env.CLIWEB_TOOLBAR_COLORS ?? '[]');
+  } catch {
+    return;
+  }
+  if (!Array.isArray(colors)) return;
+
+  const safeColors = colors.filter(
+    (entry): entry is [string, string] =>
+      Array.isArray(entry) &&
+      typeof entry[0] === 'string' &&
+      /^[a-z0-9-]+$/.test(entry[0]) &&
+      typeof entry[1] === 'string' &&
+      /^#[0-9a-f]{6}$/i.test(entry[1]),
+  );
+  if (safeColors.length === 0) return;
+
+  toolbar.webContents.once('did-finish-load', () => {
+    const script = `for (const [name, color] of ${JSON.stringify(safeColors)}) document.documentElement.style.setProperty('--cliweb-color-' + name, color);`;
+    toolbar.webContents.executeJavaScript(script).catch((error) => {
+      console_.error('Failed to apply terminal colors:', error);
+    });
+  });
+}
 
 /**
  * NOTE: the happens before load but after frame navigate
@@ -132,7 +158,7 @@ export async function createWindowWithToolbar(
       nodeIntegration: false,
       contextIsolation: true,
 
-      preload: path.resolve(__dirname, '../dist/preload.js'),
+      preload: path.resolve(__dirname, 'preload.js'),
     },
   });
 
@@ -182,26 +208,9 @@ export async function createWindowWithToolbar(
   });
   await installedExtensionsPromise;
 
-  if (options.dev) {
-    toolbar.webContents.once('did-finish-load', () => {
-      console_.error('toolbar loaded');
-    });
-    toolbar.webContents.once('did-fail-load', (_event, errorCode, errorDescription) => {
-      console_.error('toolbar failed to load', {
-        errorCode,
-        errorDescription,
-      });
-    });
-    toolbar.webContents.loadURL(`http://localhost:${TOOLBAR_PORT}`);
-    toolbar.webContents.openDevTools({
-      mode: 'detach',
-      title: 'Toolbar Dev Tools',
-      activate: false,
-    });
-  } else {
-    resetForFrameQuirk(toolbar.webContents);
-    toolbar.webContents.loadFile('../dist/toolbar/index.html');
-  }
+  applyToolbarColors(toolbar);
+  resetForFrameQuirk(toolbar.webContents);
+  toolbar.webContents.loadFile(path.resolve(__dirname, 'toolbar/index.html'));
   resetForFrameQuirk(content.webContents);
   content.webContents.loadURL(initialUrl);
 

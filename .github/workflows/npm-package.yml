@@ -1,0 +1,71 @@
+name: npm package
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - electron
+
+permissions:
+  contents: read
+
+jobs:
+  native-binaries:
+    name: native (${{ matrix.package-target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            package-target: linux-x64-gnu
+          - runner: ubuntu-24.04-arm
+            package-target: linux-arm64-gnu
+          - runner: macos-15-intel
+            package-target: darwin-x64
+          - runner: macos-15
+            package-target: darwin-arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: dtolnay/rust-toolchain@stable
+      - run: bun install --frozen-lockfile
+      - run: bun run --cwd cliweb-native-rs ci
+      - run: bun run --cwd cliweb-native-rs stage:package
+      - run: npm pack --dry-run
+        working-directory: cliweb-native-rs/npm/${{ matrix.package-target }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cliweb-native-rs-${{ matrix.package-target }}
+          path: cliweb-native-rs/npm/${{ matrix.package-target }}
+          if-no-files-found: error
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+      - uses: dtolnay/rust-toolchain@stable
+      - run: bun install --frozen-lockfile
+      - run: bun run build:native
+      - run: bun run --cwd cliweb-native-rs stage:package
+      - run: bun test
+      - run: bun run typecheck
+      - run: bun run lint
+      - run: bun run build
+      - run: npm pack --dry-run
+        working-directory: cliweb-native-rs
+      - run: npm pack --dry-run
+        working-directory: cliweb-native-rs/npm/linux-x64-gnu
+      - run: npm pack --dry-run
