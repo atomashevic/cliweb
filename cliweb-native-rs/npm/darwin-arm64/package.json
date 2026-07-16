@@ -1,6 +1,6 @@
 {
   "name": "cliweb-native-rs-darwin-arm64",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "ARM64 macOS native bindings for cliweb",
   "license": "BSD-3-Clause",
   "main": "cliweb-native-rs.darwin-arm64.node",
