@@ -1,6 +1,6 @@
 # npm packaging
 
-The `cliweb` npm package is a prebuilt command-line application. Installation
+The `@atomashevic/cliweb` npm package is a prebuilt command-line application. Installation
 must not compile the TypeScript application, build the toolbar, clone the Git
 repository, or install a separate Bun runtime.
 
@@ -54,7 +54,7 @@ When `XDG_CONFIG_HOME` is unset, the fallback is
 
 ## Publishing order
 
-The root package depends on `cliweb-native-rs@2.0.4`. Build each native target
+The root package depends on `cliweb-native-rs@2.0.5`. Build each native target
 on its matching runner, stage it with `stage:package`, then publish the four
 platform packages before the loader. The `npm package` GitHub Actions workflow
 does this on Linux and macOS for arm64 and x64 and uploads one artifact for each
@@ -70,10 +70,8 @@ npm publish --access public ./cliweb-native-rs
 ```
 
 Repeat the first three commands for Darwin and GNU/Linux on arm64 and x64. All
-five native packages must use the same version. Then validate and publish
-`cliweb`:
-
-Then validate and publish the root tarball:
+five native packages must use the same version. Then validate and publish the
+root tarball:
 
 ```bash
 bun install --frozen-lockfile
@@ -84,9 +82,10 @@ npm pack --dry-run
 npm publish --access public
 ```
 
-The package name is intentionally unscoped so the installed command is simply:
+The application package is scoped because npm reserves the similar unscoped
+name `cli-web`. The installed command remains `cliweb`:
 
 ```bash
-npm install --global cliweb
+npm install --global @atomashevic/cliweb
 cliweb --version
 ```

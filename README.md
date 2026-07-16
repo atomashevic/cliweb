@@ -18,7 +18,7 @@ Actual Chromium being rendered in your favorite terminal that supports the [Kitt
 Install the published command globally with npm:
 
 ```bash
-npm install --global cliweb
+npm install --global @atomashevic/cliweb
 ```
 
 The npm package contains prebuilt application and toolbar assets. It does not
