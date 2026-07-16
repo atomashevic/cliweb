@@ -160,3 +160,4 @@ function destroyAllSubprocesses() {
 
 process.on('SIGINT', destroyAllSubprocesses);
 process.on('SIGTERM', destroyAllSubprocesses);
+process.on('SIGHUP', destroyAllSubprocesses);
