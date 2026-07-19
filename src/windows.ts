@@ -26,6 +26,7 @@ import { getDisplayScale } from './dpi';
 import { features } from './features';
 import { updateCursor } from './tty/cursor';
 import { debounce } from './debounce';
+import { focusMouseTarget } from './tty/mouseFocus';
 import { type BrowserDataStore, normalizeStoredUrl } from './browserData';
 import type {
   BookmarkToggleResult,
@@ -142,7 +143,7 @@ export async function createWindowWithToolbar(
   initialUrl = 'https://github.com/atomashevic/cliweb',
   browserData: BrowserDataStore,
 ): Promise<WindowView> {
-  console_.error('size', size);
+  if (options['debug-paint']) console_.error('size', size);
   // Create layout container with device pixel dimensions
   const layoutContainer = layout(
     size.width,
@@ -259,25 +260,14 @@ export async function createWindowWithToolbar(
     toolbarNode.height = mode ? auto() : px(TOOLBAR_HEIGHT);
     // Keep a tiny content surface because Electron rejects zero-sized BrowserWindows.
     contentNode.height = mode ? px(1) : auto();
-    if (terminalVisible) unregisterPaints();
     const currentSize = getBrowserWindowSize();
     updateViewSizes(view, currentSize);
     if (terminalVisible) {
-      registerPaints(padSize(currentSize));
       toolbar.webContents.invalidate();
       content.webContents.invalidate();
     }
     toolbar.webContents.send('browser-data:panel-mode-changed', mode);
-
-    if (mode) {
-      content.blurWebView();
-      toolbar.focusOnWebView();
-      view.focusedContent = toolbar.webContents;
-    } else {
-      toolbar.blurWebView();
-      content.focusOnWebView();
-      view.focusedContent = content.webContents;
-    }
+    focusMouseTarget(view, mode ? toolbar.webContents : content.webContents);
   };
 
   const sendBookmarkState = () => {
@@ -373,6 +363,7 @@ export async function createWindowWithToolbar(
 
   resetForFrameQuirk(content.webContents);
   content.webContents.loadURL(initialUrl);
+  focusMouseTarget(view, content.webContents);
 
   process.on(
     'SIGWINCH',
@@ -381,7 +372,7 @@ export async function createWindowWithToolbar(
       unregisterPaints();
 
       const size = getBrowserWindowSize();
-      console_.error('resize', size);
+      if (options['debug-paint']) console_.error('resize', size);
       updateViewSizes(view, size);
       registerPaints(padSize(size));
       toolbar.webContents.invalidate();

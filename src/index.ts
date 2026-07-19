@@ -161,10 +161,11 @@ app.commandLine.appendSwitch('disable-features', 'UseBrowserCalculatedOrigin');
 app.whenReady().then(async () => {
   browserData = new BrowserDataStore(path.join(profilePaths.userData, 'browser-data.sqlite3'));
   const window = await createWindowWithToolbar(getBrowserWindowSize(), INITIAL_URL, browserData);
+  const browserController = new BrowserController(window);
 
   if (options.control) {
     try {
-      controlServer = await startControlServer(new BrowserController(window), PACKAGE_VERSION);
+      controlServer = await startControlServer(browserController, PACKAGE_VERSION);
     } catch (error) {
       cleanup(
         1,

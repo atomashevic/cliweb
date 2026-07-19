@@ -60,6 +60,7 @@ export function registerPaintedContent(
     const imageBufferSize = imageSize.width * imageSize.height * 4;
     if (result.buffer == null) {
       result.buffer = new ShmGraphicBuffer(imageBufferSize);
+      result.size = imageBufferSize;
     }
     if (options['debug-paint']) {
       console_.error('paint', result.buffer.nameBase64, image.getSize());

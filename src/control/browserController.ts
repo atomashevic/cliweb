@@ -60,6 +60,31 @@ const KEY_DEFINITIONS: Record<string, { key: string; code: string; virtualKeyCod
   space: { key: ' ', code: 'Space', virtualKeyCode: 32 },
 };
 
+const PDF_ACTIVATE_FUNCTION = `function () {
+  let element = this && this.nodeType === 1 ? this : this?.parentElement;
+  const selector = 'button, input, a, cr-icon-button, [role="button"], [role="tab"], [role="link"]';
+  while (element) {
+    if (element.matches?.(selector)) {
+      element.focus?.();
+      element.click();
+      return true;
+    }
+    if (element.parentElement) {
+      element = element.parentElement;
+      continue;
+    }
+    const root = element.getRootNode?.();
+    element = root?.host ?? null;
+  }
+  return false;
+}`;
+
+const controllersByContents = new WeakMap<WebContents, BrowserController>();
+
+export function dispatchPdfClickAt(contents: WebContents, x: number, y: number): boolean {
+  return controllersByContents.get(contents)?.dispatchPdfClickAt(x, y) ?? false;
+}
+
 function scalar(value: unknown): string | number | boolean | undefined {
   return ['string', 'number', 'boolean'].includes(typeof value)
     ? (value as string | number | boolean)
@@ -73,14 +98,21 @@ function timeoutError(timeoutMs: number): ControlError {
 export class BrowserController {
   private documentEpoch = 1;
   private debuggerInitialized = false;
+  private embeddedInputSession: Promise<string | null> | null = null;
+  private pdfClickQueue = Promise.resolve();
 
   constructor(private readonly view: WindowView) {
     const contents = this.contents;
+    controllersByContents.set(contents, this);
     contents.on('did-start-navigation', (details) => {
-      if (details.isMainFrame && !details.isSameDocument) this.documentEpoch++;
+      if (details.isMainFrame && !details.isSameDocument) {
+        this.documentEpoch++;
+        this.embeddedInputSession = null;
+      }
     });
     contents.debugger.on('detach', () => {
       this.debuggerInitialized = false;
+      this.embeddedInputSession = null;
     });
   }
 
@@ -190,10 +222,11 @@ export class BrowserController {
     }
   }
 
-  private async cdp(method: string, params?: Record<string, unknown>): Promise<any> {
+  private async inputCdp(method: string, params?: Record<string, unknown>): Promise<any> {
     await this.ensureDebugger();
     try {
-      return await this.contents.debugger.sendCommand(method, params);
+      const sessionId = await this.getEmbeddedInputSession();
+      return await this.contents.debugger.sendCommand(method, params, sessionId ?? undefined);
     } catch (error) {
       throw new ControlError(
         'INTERNAL',
@@ -202,10 +235,79 @@ export class BrowserController {
     }
   }
 
+  private getEmbeddedInputSession(): Promise<string | null> {
+    if (!this.embeddedInputSession) {
+      this.embeddedInputSession = this.resolveEmbeddedInputSession();
+    }
+    return this.embeddedInputSession;
+  }
+
+  private async resolveEmbeddedInputSession(): Promise<string | null> {
+    if (!this.isPdfDocument()) return null;
+
+    const result = (await this.contents.debugger.sendCommand('Target.getTargets')) as {
+      targetInfos?: Array<{ targetId?: string; type?: string; url?: string }>;
+    };
+    const target = result.targetInfos?.find(
+      (info) =>
+        info.type === 'webview' &&
+        info.url?.startsWith('chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/'),
+    );
+    if (!target?.targetId) return null;
+
+    const attached = (await this.contents.debugger.sendCommand('Target.attachToTarget', {
+      targetId: target.targetId,
+      flatten: true,
+    })) as { sessionId?: string };
+    return attached.sessionId ?? null;
+  }
+
+  private isPdfDocument(): boolean {
+    const documentUrl = this.contents.getURL().split(/[?#]/, 1)[0]?.toLowerCase() ?? '';
+    return documentUrl.endsWith('.pdf');
+  }
+
+  dispatchPdfClickAt(x: number, y: number): boolean {
+    if (!this.isPdfDocument()) return false;
+    this.pdfClickQueue = this.pdfClickQueue
+      .then(async () => {
+        const located = await this.inputCdp('DOM.getNodeForLocation', {
+          x,
+          y,
+          includeUserAgentShadowDOM: true,
+          ignorePointerEventsNone: true,
+        });
+        if (typeof located.backendNodeId === 'number') {
+          await this.activatePdfNode(located.backendNodeId);
+        }
+      })
+      .catch(() => {});
+    return true;
+  }
+
+  private async activatePdfNode(backendNodeId: number): Promise<void> {
+    const resolved = await this.inputCdp('DOM.resolveNode', { backendNodeId });
+    const objectId = resolved.object?.objectId;
+    if (typeof objectId !== 'string') {
+      throw new ControlError('NOT_FOUND', 'Could not resolve the PDF control');
+    }
+    const activation = await this.inputCdp('Runtime.callFunctionOn', {
+      objectId,
+      functionDeclaration: PDF_ACTIVATE_FUNCTION,
+      userGesture: true,
+      returnByValue: true,
+    });
+    if (activation.exceptionDetails) {
+      throw new ControlError('INTERNAL', 'The PDF control could not be activated');
+    }
+  }
+
   private async snapshot(params: Record<string, unknown>) {
     const requested = Math.floor(optionalNumber(params, 'maxNodes', DEFAULT_SNAPSHOT_NODES));
     const maxNodes = Math.min(Math.max(requested, 1), MAX_SNAPSHOT_NODES);
-    const response = (await this.cdp('Accessibility.getFullAXTree')) as { nodes?: CdpNode[] };
+    const response = (await this.inputCdp('Accessibility.getFullAXTree')) as {
+      nodes?: CdpNode[];
+    };
     const rawNodes = response.nodes ?? [];
     const byId = new Map(rawNodes.map((node) => [node.nodeId, node]));
     const childIds = new Set(rawNodes.flatMap((node) => node.childIds ?? []));
@@ -332,14 +434,14 @@ export class BrowserController {
       return Number(match[2]);
     }
 
-    const document = await this.cdp('DOM.getDocument', { depth: 0, pierce: false });
-    const result = await this.cdp('DOM.querySelector', {
+    const document = await this.inputCdp('DOM.getDocument', { depth: 0, pierce: false });
+    const result = await this.inputCdp('DOM.querySelector', {
       nodeId: document.root.nodeId,
       selector: target.selector,
     });
     if (!result.nodeId)
       throw new ControlError('NOT_FOUND', `No element matches ${target.selector}`);
-    const described = await this.cdp('DOM.describeNode', { nodeId: result.nodeId });
+    const described = await this.inputCdp('DOM.describeNode', { nodeId: result.nodeId });
     const backendNodeId = described.node?.backendNodeId;
     if (typeof backendNodeId !== 'number') {
       throw new ControlError('NOT_FOUND', `Could not resolve ${target.selector}`);
@@ -350,35 +452,44 @@ export class BrowserController {
   private async focusTarget(target: ElementTarget): Promise<number> {
     const backendNodeId = await this.resolveTarget(target);
     try {
-      await this.cdp('DOM.scrollIntoViewIfNeeded', { backendNodeId });
+      await this.inputCdp('DOM.scrollIntoViewIfNeeded', { backendNodeId });
     } catch {
       // Some non-layout nodes cannot be scrolled but may still be focusable.
     }
-    await this.cdp('DOM.focus', { backendNodeId });
+    await this.inputCdp('DOM.focus', { backendNodeId });
     return backendNodeId;
   }
 
   private async click(target: ElementTarget) {
     const backendNodeId = await this.resolveTarget(target);
     try {
-      await this.cdp('DOM.scrollIntoViewIfNeeded', { backendNodeId });
+      await this.inputCdp('DOM.scrollIntoViewIfNeeded', { backendNodeId });
     } catch {}
-    const response = await this.cdp('DOM.getBoxModel', { backendNodeId });
+    if (this.isPdfDocument()) {
+      await this.activatePdfNode(backendNodeId);
+      return {
+        clicked: true,
+        ref: target.ref,
+        selector: target.selector,
+        url: this.contents.getURL(),
+      };
+    }
+    const response = await this.inputCdp('DOM.getBoxModel', { backendNodeId });
     const quad = response.model?.content ?? response.model?.border;
     if (!Array.isArray(quad) || quad.length !== 8) {
       throw new ControlError('NOT_FOUND', 'Element has no clickable box');
     }
     const x = (quad[0] + quad[2] + quad[4] + quad[6]) / 4;
     const y = (quad[1] + quad[3] + quad[5] + quad[7]) / 4;
-    await this.cdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
-    await this.cdp('Input.dispatchMouseEvent', {
+    await this.inputCdp('Input.dispatchMouseEvent', { type: 'mouseMoved', x, y });
+    await this.inputCdp('Input.dispatchMouseEvent', {
       type: 'mousePressed',
       x,
       y,
       button: 'left',
       clickCount: 1,
     });
-    await this.cdp('Input.dispatchMouseEvent', {
+    await this.inputCdp('Input.dispatchMouseEvent', {
       type: 'mouseReleased',
       x,
       y,
@@ -398,7 +509,7 @@ export class BrowserController {
     const modifiers = process.platform === 'darwin' ? 4 : 2;
     await this.dispatchKey({ key: 'a', code: 'KeyA', virtualKeyCode: 65 }, modifiers);
     await this.dispatchKey(KEY_DEFINITIONS.backspace, 0);
-    if (text.length > 0) await this.cdp('Input.insertText', { text });
+    if (text.length > 0) await this.inputCdp('Input.insertText', { text });
     return { filled: true, ref: target.ref, selector: target.selector, length: text.length };
   }
 
@@ -462,19 +573,19 @@ export class BrowserController {
       nativeVirtualKeyCode: definition.virtualKeyCode,
       modifiers,
     };
-    await this.cdp('Input.dispatchKeyEvent', {
+    await this.inputCdp('Input.dispatchKeyEvent', {
       type: 'keyDown',
       ...common,
       ...(text ? { text } : {}),
     });
-    await this.cdp('Input.dispatchKeyEvent', { type: 'keyUp', ...common });
+    await this.inputCdp('Input.dispatchKeyEvent', { type: 'keyUp', ...common });
   }
 
   private async scroll(params: Record<string, unknown>) {
     const deltaX = optionalNumber(params, 'deltaX', 0);
     const deltaY = optionalNumber(params, 'deltaY', 0);
     const [width, height] = this.view.content.getContentSize();
-    await this.cdp('Input.dispatchMouseEvent', {
+    await this.inputCdp('Input.dispatchMouseEvent', {
       type: 'mouseWheel',
       x: width / 2,
       y: height / 2,
