@@ -20,7 +20,8 @@
     "terminal"
   ],
   "bin": {
-    "cliweb": "dist/runner/index.js"
+    "cliweb": "dist/runner/index.js",
+    "cliwebctl": "dist/control/cli.js"
   },
   "files": [
     "dist/**/*",
@@ -47,13 +48,15 @@
     "cliweb-native-rs"
   ],
   "scripts": {
-    "build": "bun run scripts/build-package.ts",
+    "build": "node scripts/run-build.js",
     "build:native": "bun run --cwd cliweb-native-rs make",
     "prepack": "node scripts/run-build.js",
     "postinstall": "node scripts/configure-sandbox.js",
     "start": "node dist/runner/index.js",
     "pack:dry-run": "npm pack --dry-run",
     "format": "biome format --write .",
+    "test": "node scripts/run-tests.mjs",
+    "test:browser-data": "node scripts/run-browser-data-test.mjs",
     "lint": "biome lint ./src ./scripts",
     "lint-fix": "biome lint --write ./src ./scripts",
     "lint-fix-unsafe": "biome lint --write --unsafe ./src ./scripts",

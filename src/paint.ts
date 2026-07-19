@@ -48,9 +48,9 @@ export function registerPaintedContent(
   const result: PaintedContent = {
     destroy() {
       contents.off('paint', paint);
-      this.buffer = undefined;
-      this.frame?.delete();
-      this.frame = undefined;
+      result.buffer = undefined;
+      result.frame?.delete();
+      result.frame = undefined;
     },
   };
 
@@ -109,7 +109,7 @@ export function registerPaintedContentFallback(
   const result: PaintedContent = {
     destroy() {
       contents.off('paint', paint);
-      this.buffer = undefined;
+      result.buffer = undefined;
       paintedImage?.free();
       paintedImage = undefined;
     },

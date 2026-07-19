@@ -11,8 +11,10 @@ The root `package.json` uses a strict `files` allowlist. The tarball contains:
 - `dist/index.js`, the bundled Electron main process
 - `dist/preload.js`, the bundled toolbar preload
 - `dist/runner/index.js`, the Node-based `cliweb` executable
+- `dist/control/cli.js`, the Node-based `cliwebctl` executable
 - `dist/toolbar`, the prebuilt toolbar application
 - `dist/kitty.css`, the default terminal-aware color theme
+- `dist/version`, the packaged application version
 - `config.js`, copied into the user's config directory on first launch
 - `scripts/configure-sandbox.js`, the Linux sandbox setup hook
 
@@ -32,7 +34,8 @@ requires Rust, Cargo, or `@napi-rs/cli` on the consumer machine.
 
 ## Build boundary
 
-`npm pack` runs `prepack`, which invokes `scripts/build-package.ts`. The release
+`npm pack` runs `prepack`, which invokes `scripts/run-build.js`; that launcher runs
+`scripts/build-package.ts`. The release
 build uses esbuild for the relocatable Node and Electron bundles and Vite for
 the toolbar. Runtime dependencies remain external and are installed normally
 by npm.
@@ -40,6 +43,14 @@ by npm.
 The installed launcher reads terminal colors, passes them to Electron through
 the environment, and applies them as CSS custom properties. This preserves the
 terminal-specific toolbar palette without rebuilding assets on first launch.
+
+### Linux Chromium sandbox
+
+On Linux, the launcher also reruns the sandbox setup hook immediately before
+starting Electron. npm may execute the cliweb and Electron postinstall scripts
+concurrently, so the install-time hook can finish before Electron creates its
+helper. The runtime check repairs that race while retaining Chromium's setuid
+sandbox.
 
 ## Runtime configuration
 

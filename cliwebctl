@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+
+set -e
+
+resolve_link() {
+  local target="$1"
+  while [ -L "$target" ]; do
+    target="$(readlink "$target")"
+    if [[ "$target" != /* ]]; then
+      target="$(dirname "$1")/$target"
+    fi
+  done
+  echo "$target"
+}
+
+BASE_DIR=$(cd -- "$(dirname -- "$(resolve_link "${BASH_SOURCE:-$0}")")" &>/dev/null && pwd)
+if [ ! -d "$BASE_DIR/node_modules" ]; then
+  "$BASE_DIR/setup.sh"
+fi
+
+exec -a cliwebctl "$BASE_DIR/.bun/bin/bun" run "$BASE_DIR/src/control/cli.ts" "$@"

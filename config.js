@@ -58,12 +58,18 @@ const keybindings = {
     '<M-a>': ({ view }) => {
       view.focusedContent.selectAll();
     },
+    '<M-d>': toggleBookmark,
+    '<M-A-b>': showBookmarks,
+    '<M-y>': showHistory,
     '<M-]>': forward,
     '<M-[>': back,
     '<M-f>': find,
     '<M-r>': refresh,
   },
   linux: {
+    '<C-d>': toggleBookmark,
+    '<C-S-o>': showBookmarks,
+    '<C-h>': showHistory,
     '<C-]>': forward,
     '<C-[>': back,
     '<C-f>': find,
@@ -91,6 +97,21 @@ function find({ view }) {
   view.content.blurWebView();
   view.toolbar.focusOnWebView();
   view.focusedContent = view.toolbar.webContents;
+}
+
+/** @type {import('./src/keybindings').KeyBindingAction} */
+function toggleBookmark({ view }) {
+  view.toggleBookmark();
+}
+
+/** @type {import('./src/keybindings').KeyBindingAction} */
+function showBookmarks({ view }) {
+  view.showPanel('bookmarks');
+}
+
+/** @type {import('./src/keybindings').KeyBindingAction} */
+function showHistory({ view }) {
+  view.showPanel('history');
 }
 
 const config = {

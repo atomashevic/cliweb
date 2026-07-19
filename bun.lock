@@ -534,6 +534,14 @@
 
     "cliweb-native-rs": ["cliweb-native-rs@workspace:cliweb-native-rs"],
 
+    "cliweb-native-rs-darwin-arm64": ["cliweb-native-rs-darwin-arm64@2.0.5", "", { "os": "darwin", "cpu": "arm64" }, "sha512-zlcO+wc4Sb5nC9zKl9P5G25JvsrhDhkAmR48DUS1AnFEb2qkVWaYhMss3+VSh3UGshDFgIsYlbQ31wrYt0KCWA=="],
+
+    "cliweb-native-rs-darwin-x64": ["cliweb-native-rs-darwin-x64@2.0.5", "", { "os": "darwin", "cpu": "x64" }, "sha512-xMtDKxT6Jn+5xV6eTEzD2n1/HenIcahuj8qIG5XIV+6DSSJMir2rjRXlzvc3Cx1+LnAnTuPcNsCtfmqbaL/xQA=="],
+
+    "cliweb-native-rs-linux-arm64-gnu": ["cliweb-native-rs-linux-arm64-gnu@2.0.5", "", { "os": "linux", "cpu": "arm64" }, "sha512-0dAuzS2itGP+14WRsf+yEJjDHYgPb4xELLY8LD84kz8HLIv8UfUtFzYswmBuPJ9F1L9jQr/TRovGWrEzCI7eXA=="],
+
+    "cliweb-native-rs-linux-x64-gnu": ["cliweb-native-rs-linux-x64-gnu@2.0.5", "", { "os": "linux", "cpu": "x64" }, "sha512-ZRgXwA9xcyjppMdp9eplSsydu9abhuSpTgFA/AwXroYjvUrOFBwXPCwfLraYjc3IRkEYoSq5RCG89MgsCk+S7g=="],
+
     "clone-response": ["clone-response@1.0.3", "", { "dependencies": { "mimic-response": "^1.0.0" } }, "sha512-ROoL94jJH2dUVML2Y/5PEDNaSHgeOdSDicUyS7izcF63G6sTc/FTjLub4b8Il9S8S0beOfYt0TaA5qvFK+w0wA=="],
 
     "color-convert": ["color-convert@2.0.1", "", { "dependencies": { "color-name": "~1.1.4" } }, "sha512-RRECPsj7iu/xb5oKYcsFHSppFNnsj/52OVTRKb4zP5onXwVF3zVmmToNcOfGC+CRDpfK/U584fMg38ZHCaElKQ=="],

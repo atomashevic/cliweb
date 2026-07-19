@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+BASE_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
+SOURCE="$BASE_DIR/skills/control-cliweb"
+SKILLS_DIR="${CODEX_HOME:-$HOME/.codex}/skills"
+TARGET="$SKILLS_DIR/control-cliweb"
+
+mkdir -p "$SKILLS_DIR"
+
+if [ -L "$TARGET" ] && [ "$(readlink "$TARGET")" = "$SOURCE" ]; then
+  echo "control-cliweb is already installed at $TARGET"
+  exit 0
+fi
+
+if [ -e "$TARGET" ] || [ -L "$TARGET" ]; then
+  echo "error: $TARGET already exists; remove or relocate it before installing" >&2
+  exit 1
+fi
+
+ln -s "$SOURCE" "$TARGET"
+echo "Installed control-cliweb at $TARGET"

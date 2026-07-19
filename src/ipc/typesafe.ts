@@ -2,7 +2,7 @@ export type Toolbar = {
   navigateBack: () => void;
   navigateForward: () => void;
   refresh: () => void;
-  navigateTo: (url: string) => void;
+  navigateTo: (url: string) => Promise<void>;
 };
 
 export type Content = {

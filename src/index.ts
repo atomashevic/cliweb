@@ -4,18 +4,25 @@ import {
   listenForInput,
   type TermEvent,
   termDisableFeatures,
-  getWindowSize,
 } from 'cliweb-native-rs';
 import * as out from './tty/output';
-import { handleInput } from './inputHandler';
-import { createWindowWithToolbar } from './windows';
+import { handleInput, invalidateMouseCoordinateCache } from './inputHandler';
+import { createWindowWithToolbar, getBrowserWindowSize } from './windows';
 import { console_ } from './console';
 import { options } from './args';
 import { features } from './features';
 import { clearPlacements } from './tty/kittyGraphics';
+import { invalidateTmuxPaneOrigin } from './tty/escapeCodes';
 import { loadKeyBindings } from './keybindings';
 import fs from 'node:fs';
 import path from 'node:path';
+import { BrowserController } from './control/browserController';
+import { startControlServer, type ControlServerHandle } from './control/server';
+import { configureProfile } from './profile';
+import { BrowserDataStore } from './browserData';
+import { flushSessionCookies } from './session';
+
+const profilePaths = configureProfile();
 
 let homepage = 'https://github.com/atomashevic/cliweb';
 
@@ -33,7 +40,9 @@ function loadConfig(config: typeof import('../config.js')) {
   }
 }
 
-const CONFIG_PATH_RESOLVED = process.env.CLIWEB_CONFIG_PATH ?? path.resolve(__dirname, '../config.js');
+const CONFIG_PATH_RESOLVED =
+  process.env.CLIWEB_CONFIG_PATH ?? path.resolve(__dirname, '../config.js');
+const PACKAGE_VERSION = require(path.resolve(__dirname, '../package.json')).version as string;
 loadConfig(require(CONFIG_PATH_RESOLVED));
 
 fs.watchFile(CONFIG_PATH_RESOLVED, { interval: 200 }, (curr, prev) => {
@@ -64,30 +73,39 @@ const INITIAL_URL = options.url || homepage;
 
 let exiting = false;
 let quitListening = () => {};
+let controlServer: ControlServerHandle | undefined;
+let browserData: BrowserDataStore | undefined;
 
 const cleanup = (signum = 1, reason?: string) => {
+  if (exiting) return;
   exiting = true;
+  controlServer?.disposeSync();
   quitListening();
-  clearPlacements();
-  out.cleanup();
-  if (features.current) {
-    termDisableFeatures(features.current);
+  if (!options['no-paint']) {
+    clearPlacements();
+    out.cleanup();
+    if (features.current) termDisableFeatures(features.current);
   }
-  if (reason) {
-    console_.log(reason);
-  }
-  process.exit(signum);
+  void (async () => {
+    try {
+      await Promise.race([
+        flushSessionCookies(),
+        new Promise<void>((resolve) => setTimeout(resolve, 2_000)),
+      ]);
+    } catch (error) {
+      console_.error('Could not flush cookies:', error);
+    }
+    try {
+      browserData?.close();
+    } catch (error) {
+      console_.error('Could not close browser data:', error);
+    }
+    if (reason) console_.log(reason);
+    process.exit(signum);
+  })();
 };
 
 function inputHandler(evt: TermEvent) {
-  if (
-    evt.eventType === 'key' &&
-    evt.keyEvent.code === 'd' &&
-    evt.keyEvent.modifiers.includes('ctrl')
-  ) {
-    cleanup(0);
-  }
-
   // Graphics protocol events now come through graphics events
   if (options['debug-paint'] && evt.eventType === 'graphics') {
     console_.error('Graphics protocol: ', evt.graphics);
@@ -102,6 +120,13 @@ function setup() {
   process.on('SIGTERM', cleanup_);
   process.on('SIGHUP', cleanup_);
   process.on('SIGABRT', cleanup_);
+  process.on('SIGWINCH', () => {
+    invalidateTmuxPaneOrigin();
+    invalidateMouseCoordinateCache();
+  });
+
+  const controlOnly = Boolean(options.control && options['no-paint']);
+  if (controlOnly) return;
 
   out.setup();
   features.current = termEnableFeatures();
@@ -134,7 +159,20 @@ app.commandLine.appendSwitch('silent-debugger-extension-api');
 app.commandLine.appendSwitch('disable-features', 'UseBrowserCalculatedOrigin');
 
 app.whenReady().then(async () => {
-  const window = await createWindowWithToolbar(getWindowSize(), INITIAL_URL);
+  browserData = new BrowserDataStore(path.join(profilePaths.userData, 'browser-data.sqlite3'));
+  const window = await createWindowWithToolbar(getBrowserWindowSize(), INITIAL_URL, browserData);
+
+  if (options.control) {
+    try {
+      controlServer = await startControlServer(new BrowserController(window), PACKAGE_VERSION);
+    } catch (error) {
+      cleanup(
+        1,
+        `Could not start cliweb control: ${error instanceof Error ? error.message : String(error)}`,
+      );
+      return;
+    }
+  }
 
   ipcMain.handle('findInPage', (_, text: string, opts) => {
     window.content.webContents.findInPage(text, opts);
@@ -146,4 +184,10 @@ app.whenReady().then(async () => {
     window.content.focusOnWebView();
     window.focusedContent = window.content.webContents;
   });
+});
+
+app.on('before-quit', (event) => {
+  if (exiting) return;
+  event.preventDefault();
+  cleanup(0);
 });
