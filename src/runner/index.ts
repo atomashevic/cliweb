@@ -105,7 +105,7 @@ async function main() {
 
   const toolbarColors = await readToolbarColors();
   const child: ChildProcess = spawn(electronPath, electronArgs, {
-    stdio: 'inherit',
+    stdio: ['inherit', 'inherit', options['debug-paint'] ? 'inherit' : 'ignore'],
     windowsHide: true,
     env: {
       ...process.env,
