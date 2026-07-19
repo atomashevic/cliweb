@@ -179,7 +179,7 @@ export function normalizeNavigationUrl(value: string, baseDirectory = process.cw
   const target = value.trim();
   const hasScheme = /^[a-z][a-z\d+.-]*:/i.test(target);
 
-  if (!hasScheme && /\.pdf$/i.test(target)) {
+  if (/\.pdf$/i.test(target)) {
     const localPath = path.resolve(baseDirectory, target);
     try {
       if (fs.statSync(localPath).isFile()) return pathToFileURL(localPath).href;

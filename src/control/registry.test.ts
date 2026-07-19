@@ -1,5 +1,4 @@
 import { describe, expect, test } from 'bun:test';
-import path from 'node:path';
 import { controlRoot, createDescriptor, createInstancePaths } from './registry';
 
 describe('control registry paths', () => {
@@ -26,7 +25,7 @@ describe('control registry paths', () => {
     const paths = createInstancePaths({
       platform: 'linux',
       env: {},
-      root: path.join('/tmp', 'x'.repeat(120)),
+      root: `/tmp/${'x'.repeat(120)}`,
       tmpdir: '/short',
       uid: 42,
       instanceId: 'abc123',

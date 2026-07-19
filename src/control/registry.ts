@@ -26,12 +26,13 @@ function userKey(options: RuntimeOptions = {}): string {
 
 export function controlRoot(options: RuntimeOptions = {}): string {
   const env = options.env ?? process.env;
-  if (env.CLIWEB_CONTROL_DIR) return path.resolve(env.CLIWEB_CONTROL_DIR);
   const platform = options.platform ?? process.platform;
+  const pathApi = platform === 'win32' ? path.win32 : path.posix;
+  if (env.CLIWEB_CONTROL_DIR) return pathApi.resolve(env.CLIWEB_CONTROL_DIR);
   if (platform !== 'win32' && env.XDG_RUNTIME_DIR) {
-    return path.join(env.XDG_RUNTIME_DIR, 'cliweb');
+    return pathApi.join(env.XDG_RUNTIME_DIR, 'cliweb');
   }
-  return path.join(options.tmpdir ?? os.tmpdir(), `cliweb-${userKey(options)}`);
+  return pathApi.join(options.tmpdir ?? os.tmpdir(), `cliweb-${userKey(options)}`);
 }
 
 export function ensureControlRoot(root = controlRoot()): string {
@@ -51,9 +52,10 @@ export function createInstancePaths(
   options: RuntimeOptions & { root?: string; instanceId?: string } = {},
 ): InstancePaths {
   const platform = options.platform ?? process.platform;
+  const pathApi = platform === 'win32' ? path.win32 : path.posix;
   const root = options.root ?? controlRoot(options);
   const instanceId = options.instanceId ?? randomBytes(8).toString('hex');
-  const descriptorPath = path.join(root, `${instanceId}.json`);
+  const descriptorPath = pathApi.join(root, `${instanceId}.json`);
   if (platform === 'win32') {
     return {
       instanceId,
@@ -63,9 +65,9 @@ export function createInstancePaths(
     };
   }
 
-  let endpoint = path.join(root, `${instanceId}.sock`);
+  let endpoint = pathApi.join(root, `${instanceId}.sock`);
   if (Buffer.byteLength(endpoint) > 96) {
-    endpoint = path.join(
+    endpoint = pathApi.join(
       options.tmpdir ?? os.tmpdir(),
       `cw-${userKey(options)}-${instanceId}.sock`,
     );
