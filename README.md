@@ -5,29 +5,27 @@
 cliweb renders Chromium through the
 [Kitty graphics protocol](https://sw.kovidgoyal.net/kitty/graphics-protocol/), so a browser can live
 beside your shell instead of in a separate desktop window. Its primary use case is a local workspace
-made from four pieces:
+made from three pieces:
 
 - **Codex** for reasoning, coding, and structured browser actions
-- **tmux** for a durable, shared pane layout
-- **Ghostty or Kitty** for high-quality terminal graphics and mouse input
+- **Kitty** for a native side-by-side terminal layout, high-quality graphics, and mouse input
 - **cliweb** for the browser that both Codex and the human can control
 
 ```text
-Ghostty or Kitty
-└── tmux window
-    ├── Codex + shell ── cliwebctl ── authenticated local socket ──┐
-    └── cliweb pane ◀──────────── human mouse + keyboard           │
-                         same Chromium instance ◀─────────────────┘
+Kitty window
+├── Codex + shell ── cliwebctl ── authenticated local socket ──┐
+└── cliweb split ◀─────────── human mouse + keyboard            │
+                    same Chromium instance ◀────────────────────┘
 ```
 
 Codex can inspect the page, navigate, click, type, scroll, take screenshots, and verify the result.
-At the same time, you can move into the browser pane and use it normally. Log in yourself, solve a
+At the same time, you can move into the browser split and use it normally. Log in yourself, solve a
 CAPTCHA, review a form, adjust a notebook cell, or take over whenever visual judgment matters; Codex
 can resume from the resulting browser state.
 
 ## What this workspace is for
 
-- Run JupyterLab beside a shell and collaborate on notebooks without leaving tmux.
+- Run JupyterLab beside a shell and collaborate on notebooks without leaving Kitty.
 - Preview local HTML, documentation, Vite applications, and other development servers.
 - Browse technical material while Codex follows links, extracts page structure, and keeps context.
 - Let Codex prepare forms while a human reviews sensitive fields and controls final submission.
@@ -36,7 +34,7 @@ can resume from the resulting browser state.
 
 See [practical workflows](docs/WORKFLOWS.md) for complete examples.
 
-## Quick start: Codex + tmux + cliweb
+## Quick start: Codex + Kitty + cliweb
 
 ### 1. Install cliweb
 
@@ -49,47 +47,40 @@ cliwebctl --help
 The published package contains prebuilt application, toolbar, and native assets. It does not build
 the TypeScript application on first launch.
 
-### 2. Configure tmux
+### 2. Configure Kitty
 
-Use tmux 3.3 or newer; 3.6 or newer is recommended. Add this to `~/.tmux.conf`:
+Add a local remote-control socket and the splits layout to `~/.config/kitty/kitty.conf`:
 
-```tmux
-set -g mouse on
-set -g focus-events on
-set -g allow-passthrough all
+```conf
+allow_remote_control socket-only
+listen_on unix:${XDG_RUNTIME_DIR}/kitty-{kitty_pid}
+enabled_layouts splits
 ```
 
-Then reload the configuration:
+Restart Kitty after changing the configuration. `socket-only` keeps remote control restricted to the
+local Unix socket instead of accepting arbitrary commands through the terminal.
+
+### 3. Open the shared browser split
+
+Start Codex inside Kitty, then run this from the Codex window—or ask Codex to run it:
 
 ```bash
-tmux source-file ~/.tmux.conf
+cliwebctl kitty ensure https://example.com
 ```
 
-Ghostty and Kitty both understand the graphics protocol used by cliweb. The terminal emulator,
-tmux server, and cliweb process must currently run on the same machine because rendered frames use
-POSIX shared memory.
-
-### 3. Open the shared browser pane
-
-Start Codex inside tmux, then run this from the Codex pane—or ask Codex to run it:
-
-```bash
-cliwebctl tmux ensure https://example.com
-```
-
-The adapter reuses a controlled cliweb to the right when one exists. Otherwise it starts cliweb in
-an idle right-hand pane or creates a 50/50 split. The returned JSON includes the instance ID and tmux
-pane ID.
+The adapter reuses a controlled cliweb window when one exists. Otherwise it creates a native 50/50
+Kitty split on the right and returns focus to Codex. The returned JSON includes the cliweb instance
+ID and Kitty window ID.
 
 The browser is immediately available through both paths:
 
 ```bash
 # Codex/automation path
-cliwebctl --pane %N status
-cliwebctl --pane %N snapshot --pretty
+cliwebctl --instance INSTANCE_ID status
+cliwebctl --instance INSTANCE_ID snapshot --pretty
 
 # Human path
-# Click into pane %N and use the normal mouse and keyboard.
+# Click into the cliweb split and use the normal mouse and keyboard.
 ```
 
 ### 4. Install the Codex skill
@@ -124,10 +115,10 @@ Codex normally detects the new skill automatically. If it does not appear, resta
 `/skills` or type `$control-cliweb` in a prompt to select it. For example:
 
 ```text
-Use $control-cliweb to open the app in the right tmux pane, inspect it, and test the form.
+Use $control-cliweb to open the app in the right Kitty split, inspect it, and test the form.
 ```
 
-The skill uses `cliwebctl` for page interaction and leaves the same pane available for direct human
+The skill uses `cliwebctl` for page interaction and leaves the same split available for direct human
 input.
 
 ## The shared-control loop
@@ -136,18 +127,18 @@ A reliable browser task follows four steps:
 
 ```bash
 # 1. Open or reuse the browser.
-cliwebctl tmux ensure https://example.com
+cliwebctl kitty ensure https://example.com
 
 # 2. Confirm the target and inspect the page.
-cliwebctl --pane %N status
-cliwebctl --pane %N snapshot --pretty
+cliwebctl --instance INSTANCE_ID status
+cliwebctl --instance INSTANCE_ID snapshot --pretty
 
 # 3. Act through stable semantic refs returned by the snapshot.
-cliwebctl --pane %N click --ref d1-n13
+cliwebctl --instance INSTANCE_ID click --ref d1-n13
 
 # 4. Wait for the page and verify its new state.
-cliwebctl --pane %N wait
-cliwebctl --pane %N status
+cliwebctl --instance INSTANCE_ID wait
+cliwebctl --instance INSTANCE_ID status
 ```
 
 Snapshot refs are scoped to the current document. Take a new snapshot after navigation or after a
@@ -156,6 +147,30 @@ new state before continuing.
 
 Read the [control reference](docs/CONTROL.md) for navigation, filling, key presses, screenshots,
 history, bookmarks, panels, and instance targeting.
+
+## Optional tmux compatibility
+
+tmux is not required for the primary Codex + Kitty workflow. cliweb also works inside tmux under
+either Kitty or Ghostty when graphics passthrough, mouse input, and focus events are enabled. Use
+tmux 3.3 or newer; 3.6 or newer is recommended. Add this to `~/.tmux.conf`:
+
+```tmux
+set -g mouse on
+set -g focus-events on
+set -g allow-passthrough all
+```
+
+Then reload the configuration and open the browser from the Codex pane:
+
+```bash
+tmux source-file ~/.tmux.conf
+cliwebctl tmux ensure https://example.com
+```
+
+The adapter reuses a controlled cliweb in the closest right-hand pane or creates a 50/50 split. The
+terminal emulator, tmux server, and cliweb process must run on the same machine because rendered
+frames use POSIX shared memory. See [workspace setup](docs/SETUP.md) for the recommended visibility
+hooks, targeting commands, graceful pane cleanup, and terminal-specific notes.
 
 ## Direct browser usage
 
@@ -182,7 +197,7 @@ Supported URL schemes are `http:`, `https:`, `file:`, and `data:`. When a scheme
 Shared control is especially useful when a browser task crosses a trust boundary:
 
 - Codex can fill ordinary fields and explain what remains.
-- The human can enter passwords, payment data, or other credentials directly in the browser pane.
+- The human can enter passwords, payment data, or other credentials directly in the browser split.
 - The human can solve CAPTCHAs and complete browser-native authentication prompts.
 - External submissions, purchases, messages, uploads, deletions, and permission changes should be
   confirmed immediately before the final action.
@@ -218,7 +233,8 @@ Configuration currently covers the homepage and Neovim-style keybindings. See th
 
 ## Documentation
 
-- [Workspace setup](docs/SETUP.md): tmux, Ghostty, Kitty, the Codex skill, and troubleshooting
+- [Workspace setup](docs/SETUP.md): Kitty, optional tmux/Ghostty support, the Codex skill, and
+  troubleshooting
 - [Control reference](docs/CONTROL.md): instances, snapshots, actions, verification, and safety
 - [Practical workflows](docs/WORKFLOWS.md): Jupyter, HTML, browsing, forms, and UI debugging
 - [npm packaging](docs/NPM_PACKAGING.md): package contents and release workflow
