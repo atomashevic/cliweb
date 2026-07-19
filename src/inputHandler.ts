@@ -1,7 +1,9 @@
 import { getWindowSize, type KeyEvent as KeyEventOriginal, type TermEvent } from 'cliweb-native-rs';
 import { handleEvent as handleKeyBinding } from './keybindings';
 import { focusedView } from './windows';
+import { focusMouseTarget } from './tty/mouseFocus';
 import { mousePointInDevicePixels } from './tty/mouseCoordinates';
+import { dispatchPdfClickAt } from './control/browserController';
 
 const WHEEL_DELTA = 100;
 
@@ -17,6 +19,9 @@ function isSimpleMouseEvent(kind: unknown): kind is (typeof mouseEventTypes)[num
 }
 
 let tmuxCellGrid: { columns: number; rows: number } | undefined;
+let leftMouseDown:
+  | { contents: object; x: number; y: number }
+  | undefined;
 
 export function invalidateMouseCoordinateCache() {
   tmuxCellGrid = undefined;
@@ -140,6 +145,11 @@ export function handleInput(evt: TermEvent) {
       const electronButton =
         button === 'fourth' || button === 'fifth' || button == null ? undefined : button;
 
+      if (kind === 'mouseDown' && button === 'left') {
+        focusMouseTarget(view, focusedContent);
+        leftMouseDown = { contents: focusedContent, x: adjustedX, y: adjustedY };
+      }
+
       focusedContent.sendInputEvent({
         type: kind,
         x: adjustedX,
@@ -148,17 +158,16 @@ export function handleInput(evt: TermEvent) {
         modifiers,
         clickCount: kind === 'mouseDown' ? 1 : 0,
       });
-
-      if (kind === 'mouseDown' && button === 'left') {
-        if (focusedContent !== view.focusedContent) {
-          if (focusedContent === view.content.webContents) {
-            view.toolbar.blurWebView();
-            view.content.focusOnWebView();
-          } else {
-            view.content.blurWebView();
-            view.toolbar.focusOnWebView();
-          }
-          view.focusedContent = focusedContent;
+      if (kind === 'mouseUp' && button === 'left') {
+        const down = leftMouseDown;
+        leftMouseDown = undefined;
+        if (
+          down?.contents === focusedContent &&
+          Math.abs(down.x - adjustedX) <= 4 &&
+          Math.abs(down.y - adjustedY) <= 4 &&
+          focusedContent === view.content.webContents
+        ) {
+          dispatchPdfClickAt(focusedContent, adjustedX, adjustedY);
         }
       }
       break;

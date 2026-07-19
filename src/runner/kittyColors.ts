@@ -1,4 +1,4 @@
-import { ESC, OSC } from '../tty/escapeCodes';
+import { ESC_CODE, OSC } from '../tty/escapeCodes';
 
 function toKebabCase(str: string): string {
   return str
@@ -16,6 +16,7 @@ const replacements: Record<string, string> = {
 
 export type Color = [name: string, color: string];
 type QueryResponse = Array<Color> | undefined;
+const COLOR_RESPONSE_PREFIX = `${ESC_CODE}]21;`;
 
 export const DEFAULT_TOOLBAR_COLORS: Color[] = [
   ['kitty-fg', '#d8dee9'],
@@ -24,6 +25,37 @@ export const DEFAULT_TOOLBAR_COLORS: Color[] = [
   ['selection-background', '#4c566a'],
   ['selection-foreground', '#eceff4'],
 ];
+
+function normalizeRgbColor(value: string): string | undefined {
+  const match = /^rgb:([0-9a-f]{1,4})\/([0-9a-f]{1,4})\/([0-9a-f]{1,4})$/i.exec(value);
+  if (!match) return undefined;
+  const channels = match
+    .slice(1)
+    .map((channel) => (channel.length === 1 ? channel.repeat(2) : channel.slice(0, 2)));
+  return `#${channels.join('')}`;
+}
+
+export function parseColorResponse(response: string): Color[] {
+  const start = response.indexOf(COLOR_RESPONSE_PREFIX);
+  if (start < 0) return [];
+  const payloadStart = start + COLOR_RESPONSE_PREFIX.length;
+  const stringTerminator = response.indexOf(`${ESC_CODE}\\`, payloadStart);
+  const bellTerminator = response.indexOf('\x07', payloadStart);
+  const endings = [stringTerminator, bellTerminator].filter((index) => index >= 0);
+  const payloadEnd = endings.length > 0 ? Math.min(...endings) : response.length;
+
+  return response
+    .slice(payloadStart, payloadEnd)
+    .split(';')
+    .flatMap<Color>((entry) => {
+      const separator = entry.indexOf('=');
+      if (separator <= 0) return [];
+      const name = entry.slice(0, separator);
+      const color = normalizeRgbColor(entry.slice(separator + 1));
+      if (!color) return [];
+      return [[replacements[name] ?? toKebabCase(name), color]];
+    });
+}
 
 export function queryColors(): Promise<QueryResponse> {
   const { promise, resolve } = Promise.withResolvers<QueryResponse>();
@@ -40,33 +72,31 @@ export function queryColors(): Promise<QueryResponse> {
     OSC`21;foreground=?;background=?;active_border_color=?;selection_background=?;selection_foreground=?;cursor=?;cursor_text=?${color_query}`,
   );
 
-  const PREFIX = ESC`]21;`;
-  const handler = (x: string) => {
-    if (!x.startsWith(PREFIX)) return;
-
-    const data = x
-      .slice(PREFIX.length, x.length - 2)
-      .split(';')
-      .map((y) => y.split('='))
-      .filter(([, color]) => color.startsWith('rgb:'))
-      .map<Color>(([name_, color]) => [
-        replacements[name_] ?? toKebabCase(name_),
-        `#${color.slice(4).replace(/\//g, '')}`,
-      ]);
-    resolve(data);
-
+  let buffer = '';
+  let settled = false;
+  const finish = (value: QueryResponse) => {
+    if (settled) return;
+    settled = true;
+    clearTimeout(timeout);
     process.stdin.off('data', handler);
     process.stdin.pause();
     process.stdin.setRawMode(false);
+    resolve(value);
+  };
+  const handler = (chunk: string) => {
+    buffer += chunk;
+    const start = buffer.indexOf(COLOR_RESPONSE_PREFIX);
+    if (start < 0) {
+      buffer = buffer.slice(-COLOR_RESPONSE_PREFIX.length);
+      return;
+    }
+    const response = buffer.slice(start);
+    if (!response.includes(`${ESC_CODE}\\`) && !response.includes('\x07')) return;
+    finish(parseColorResponse(response));
   };
   process.stdin.on('data', handler);
 
-  setTimeout(() => {
-    process.stdin.off('data', handler);
-    process.stdin.pause();
-    process.stdin.setRawMode(false);
-    resolve(undefined);
-  }, 100);
+  const timeout = setTimeout(() => finish(undefined), 100);
 
   return promise;
 }

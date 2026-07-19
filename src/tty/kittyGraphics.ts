@@ -50,6 +50,9 @@ export interface InitialFrame {
 
 export function paintInitialFrame(buffer: ShmGraphicBuffer, size: Size): InitialFrame {
   const id = imageId();
+  // Native terminal and Electron diagnostics can move the text cursor during startup.
+  // Always anchor the container image at the pane origin before creating its placement.
+  placeCursor({ x: 0, y: 0 });
   // paint and transfer first frame
   paintBitmap(buffer.nameBase64, size, `i=${id}`);
   // pause at the first frame

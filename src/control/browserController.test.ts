@@ -1,20 +1,30 @@
 import { describe, expect, test } from 'bun:test';
 import { EventEmitter } from 'node:events';
-import { BrowserController } from './browserController';
+import { BrowserController, dispatchPdfClickAt } from './browserController';
 import { ControlError } from './protocol';
 import type { WindowView } from '../windows';
 
-function fixture() {
+function fixture({
+  url = 'https://example.test/',
+  targetInfos = [],
+}: {
+  url?: string;
+  targetInfos?: Array<{ targetId: string; type: string; url: string }>;
+} = {}) {
   const emitter = new EventEmitter() as EventEmitter & Record<string, any>;
-  const calls: Array<{ method: string; params: unknown }> = [];
+  const calls: Array<{ method: string; params: unknown; sessionId?: string }> = [];
   let attached = false;
   const debuggerEmitter = new EventEmitter() as EventEmitter & Record<string, any>;
   debuggerEmitter.isAttached = () => attached;
   debuggerEmitter.attach = () => {
     attached = true;
   };
-  debuggerEmitter.sendCommand = async (method: string, params: unknown) => {
-    calls.push({ method, params });
+  debuggerEmitter.sendCommand = async (method: string, params: unknown, sessionId?: string) => {
+    calls.push({ method, params, ...(sessionId ? { sessionId } : {}) });
+    if (method === 'Target.getTargets') return { targetInfos };
+    if (method === 'Target.attachToTarget') return { sessionId: 'pdf-session' };
+    if (method === 'DOM.getNodeForLocation') return { backendNodeId: 41 };
+    if (method === 'DOM.resolveNode') return { object: { objectId: 'resolved-node' } };
     if (method === 'Accessibility.getFullAXTree') {
       return {
         nodes: [
@@ -40,7 +50,7 @@ function fixture() {
     return {};
   };
   emitter.debugger = debuggerEmitter;
-  emitter.getURL = () => 'https://example.test/';
+  emitter.getURL = () => url;
   emitter.getTitle = () => 'Fixture';
   emitter.isLoading = () => false;
   const capturePage = async () => ({
@@ -120,6 +130,92 @@ describe('browser controller', () => {
       method: 'Input.dispatchMouseEvent',
       params: { type: 'mousePressed', x: 10, y: 5, button: 'left', clickCount: 1 },
     });
+  });
+
+  test('routes PDF keyboard input to Chromium\'s embedded viewer target', async () => {
+    const { controller, calls } = fixture({
+      url: 'file:///tmp/document.pdf',
+      targetInfos: [
+        {
+          targetId: 'pdf-target',
+          type: 'webview',
+          url: 'chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/index.html',
+        },
+      ],
+    });
+
+    await controller.handle('press', { key: 'Control+-' });
+
+    expect(calls).toContainEqual({
+      method: 'Target.attachToTarget',
+      params: { targetId: 'pdf-target', flatten: true },
+    });
+    expect(calls).toContainEqual({
+      method: 'Input.dispatchKeyEvent',
+      params: {
+        type: 'keyDown',
+        key: '-',
+        code: '-',
+        windowsVirtualKeyCode: 45,
+        nativeVirtualKeyCode: 45,
+        modifiers: 2,
+      },
+      sessionId: 'pdf-session',
+    });
+  });
+
+  test('activates PDF controls in the embedded viewer document', async () => {
+    const { controller, calls } = fixture({
+      url: 'file:///tmp/document.pdf',
+      targetInfos: [
+        {
+          targetId: 'pdf-target',
+          type: 'webview',
+          url: 'chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/index.html',
+        },
+      ],
+    });
+
+    await controller.handle('click', { ref: 'd1-n41' });
+
+    expect(calls.find((call) => call.method === 'Runtime.callFunctionOn')).toMatchObject({
+      method: 'Runtime.callFunctionOn',
+      params: {
+        objectId: 'resolved-node',
+        userGesture: true,
+        returnByValue: true,
+      },
+      sessionId: 'pdf-session',
+    });
+  });
+
+  test('hit-tests physical PDF clicks in the embedded viewer', async () => {
+    const { controller, emitter, calls } = fixture({
+      url: 'file:///tmp/document.pdf',
+      targetInfos: [
+        {
+          targetId: 'pdf-target',
+          type: 'webview',
+          url: 'chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/index.html',
+        },
+      ],
+    });
+    expect(controller).toBeDefined();
+
+    expect(dispatchPdfClickAt(emitter, 501, 28)).toBe(true);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(calls).toContainEqual({
+      method: 'DOM.getNodeForLocation',
+      params: {
+        x: 501,
+        y: 28,
+        includeUserAgentShadowDOM: true,
+        ignorePointerEventsNone: true,
+      },
+      sessionId: 'pdf-session',
+    });
+    expect(calls.some((call) => call.method === 'Runtime.callFunctionOn')).toBe(true);
   });
 
   test('captures the trusted toolbar surface on request', async () => {
