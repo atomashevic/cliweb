@@ -1,4 +1,8 @@
 import { describe, expect, test } from 'bun:test';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import {
   ControlError,
   isControlMethod,
@@ -10,7 +14,24 @@ describe('control protocol helpers', () => {
   test('normalizes supported URLs', () => {
     expect(normalizeNavigationUrl('example.com')).toBe('https://example.com/');
     expect(normalizeNavigationUrl('http://example.com/path')).toBe('http://example.com/path');
+    expect(normalizeNavigationUrl(' file:///tmp/example.pdf ')).toBe('file:///tmp/example.pdf');
     expect(normalizeNavigationUrl('data:text/plain,hello')).toBe('data:text/plain,hello');
+  });
+
+  test('converts an existing local PDF path to a file URL', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'cliweb-pdf-navigation-'));
+    try {
+      const pdfPath = path.join(root, 'paper #1.PDF');
+      fs.writeFileSync(pdfPath, '%PDF-1.4\n%%EOF\n');
+
+      expect(normalizeNavigationUrl('paper #1.PDF', root)).toBe(pathToFileURL(pdfPath).href);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  test('does not reinterpret missing PDF paths as local files', () => {
+    expect(normalizeNavigationUrl('missing.pdf', os.tmpdir())).toBe('https://missing.pdf/');
   });
 
   test('rejects unsupported URL protocols', () => {

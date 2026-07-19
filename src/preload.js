@@ -7,7 +7,7 @@ contextBridge.exposeInMainWorld('ipc', {
   navigateBack: () => ipcRenderer.send('toolbar:navigate-back'),
   navigateForward: () => ipcRenderer.send('toolbar:navigate-forward'),
   refresh: () => ipcRenderer.send('toolbar:navigate-refresh'),
-  navigateTo: (url) => ipcRenderer.send('toolbar:navigate-to', url),
+  navigateTo: (url) => ipcRenderer.invoke('toolbar:navigate-to', url),
 
   // Bookmarks, history, private state, and site data. Cookie values never cross IPC.
   getCurrentPageState: () => ipcRenderer.invoke('browser-data:get-current'),

@@ -6,6 +6,7 @@ import {
   publicDescriptor,
   type InstanceDescriptor,
 } from './protocol';
+import { processExists, readDescriptors } from './registry';
 
 export type TmuxPane = {
   id: string;
@@ -86,6 +87,19 @@ export function rankedRightPanes(current: TmuxPane, panes: TmuxPane[]): TmuxPane
         Math.min(current.top + current.height, b.top + b.height) - Math.max(current.top, b.top);
       return overlapB - overlapA;
     });
+}
+
+export function rightPaneDescriptor(
+  rightPanes: TmuxPane[],
+  descriptors: InstanceDescriptor[],
+): InstanceDescriptor | undefined {
+  for (const pane of rightPanes) {
+    const descriptor = descriptors.find(
+      (candidate) => candidate.tmuxPane === pane.id && processExists(candidate.pid),
+    );
+    if (descriptor) return descriptor;
+  }
+  return undefined;
 }
 
 function shellQuote(value: string): string {
@@ -221,6 +235,33 @@ async function waitForPaneInstance(paneId: string, timeoutMs = 20_000) {
   throw new ControlError('TIMEOUT', `cliweb did not expose control in pane ${paneId}`);
 }
 
+async function useExistingPaneInstance(
+  descriptor: InstanceDescriptor,
+  url?: string,
+  timeoutMs = 5_000,
+) {
+  const deadline = Date.now() + timeoutMs;
+  let lastError: unknown;
+  while (Date.now() < deadline) {
+    try {
+      if (url) {
+        await callControl(descriptor, 'navigate', { url: normalizeNavigationUrl(url) });
+      } else {
+        await callControl(descriptor, 'status');
+      }
+      return publicDescriptor(descriptor);
+    } catch (error) {
+      lastError = error;
+      await new Promise((resolve) => setTimeout(resolve, 200));
+    }
+  }
+  throw new ControlError(
+    'TIMEOUT',
+    `Existing cliweb in right pane ${descriptor.tmuxPane ?? 'unknown'} did not accept control`,
+    lastError instanceof Error ? lastError.message : String(lastError),
+  );
+}
+
 function launchInPane(paneId: string, url?: string): void {
   const command = controlledCliwebArgs(url).map(shellQuote).join(' ');
   tmux(['send-keys', '-t', paneId, '-l', '--', command]);
@@ -232,18 +273,30 @@ export async function ensureTmuxCliweb(url?: string) {
   if (!currentPaneId)
     throw new ControlError('NO_TARGET', 'Could not determine the current tmux pane');
 
+  // Commands can be issued from a Codex pane whose tmux window is not the
+  // attached client's currently displayed window. cliweb's graphics handshake
+  // requires the destination pane to be visible, so bring Codex's own window
+  // forward before discovering or creating its right-hand sidecar.
+  tmux(['select-window', '-t', currentPaneId]);
+  tmux(['select-pane', '-t', currentPaneId]);
+
   const panes = listPanes(currentPaneId);
   const current = panes.find((pane) => pane.id === currentPaneId);
   if (!current) throw new ControlError('NO_TARGET', `Could not find current pane ${currentPaneId}`);
   const rightPanes = rankedRightPanes(current, panes);
   const descriptors = await liveDescriptors();
 
-  for (const pane of rightPanes) {
-    const descriptor = descriptors.find((candidate) => candidate.tmuxPane === pane.id);
-    if (descriptor) {
-      if (url) await callControl(descriptor, 'navigate', { url: normalizeNavigationUrl(url) });
-      return publicDescriptor(descriptor);
-    }
+  const liveRightDescriptor = rightPaneDescriptor(rightPanes, descriptors);
+  if (liveRightDescriptor) {
+    return await useExistingPaneInstance(liveRightDescriptor, url);
+  }
+
+  // A control socket can be briefly unavailable while the existing browser is
+  // navigating or repainting. The descriptor still identifies the intended
+  // sidecar pane, so retry that pane instead of creating a second right split.
+  const registeredRightDescriptor = rightPaneDescriptor(rightPanes, readDescriptors());
+  if (registeredRightDescriptor) {
+    return await useExistingPaneInstance(registeredRightDescriptor, url);
   }
 
   const idlePane = rightPanes.find((pane) => IDLE_SHELLS.has(pane.command));

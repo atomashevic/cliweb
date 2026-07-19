@@ -6,7 +6,7 @@ import {
   termDisableFeatures,
 } from 'cliweb-native-rs';
 import * as out from './tty/output';
-import { handleInput } from './inputHandler';
+import { handleInput, invalidateMouseCoordinateCache } from './inputHandler';
 import { createWindowWithToolbar, getBrowserWindowSize } from './windows';
 import { console_ } from './console';
 import { options } from './args';
@@ -120,7 +120,10 @@ function setup() {
   process.on('SIGTERM', cleanup_);
   process.on('SIGHUP', cleanup_);
   process.on('SIGABRT', cleanup_);
-  process.on('SIGWINCH', invalidateTmuxPaneOrigin);
+  process.on('SIGWINCH', () => {
+    invalidateTmuxPaneOrigin();
+    invalidateMouseCoordinateCache();
+  });
 
   const controlOnly = Boolean(options.control && options['no-paint']);
   if (controlOnly) return;

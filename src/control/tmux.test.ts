@@ -6,6 +6,7 @@ import {
   isDescriptorVisible,
   parsePaneList,
   rankedRightPanes,
+  rightPaneDescriptor,
 } from './tmux';
 
 describe('tmux pane discovery', () => {
@@ -32,6 +33,17 @@ describe('tmux pane discovery', () => {
 
   test('ranks the closest overlapping right pane first', () => {
     expect(rankedRightPanes(panes[0], panes).map((pane) => pane.id)).toEqual(['%1', '%2', '%3']);
+  });
+
+  test('reuses the closest registered cliweb to the right', () => {
+    const descriptors = [
+      { tmuxPane: '%3', pid: process.pid },
+      { tmuxPane: '%2', pid: process.pid },
+    ] as InstanceDescriptor[];
+
+    expect(rightPaneDescriptor(rankedRightPanes(panes[0], panes), descriptors)?.tmuxPane).toBe(
+      '%2',
+    );
   });
 
   test('starts a new controlled pane in the foreground for terminal capability detection', () => {

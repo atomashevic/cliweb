@@ -1,3 +1,7 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+
 export const CONTROL_PROTOCOL_VERSION = 1;
 export const MAX_REQUEST_BYTES = 1024 * 1024;
 export const DEFAULT_TIMEOUT_MS = 30_000;
@@ -171,8 +175,20 @@ export function requireElementTarget(params: Record<string, unknown>): ElementTa
   throw new ControlError('INVALID_REQUEST', 'Element target cannot be empty');
 }
 
-export function normalizeNavigationUrl(value: string): string {
-  const normalized = /^[a-z][a-z\d+.-]*:/i.test(value) ? value : `https://${value}`;
+export function normalizeNavigationUrl(value: string, baseDirectory = process.cwd()): string {
+  const target = value.trim();
+  const hasScheme = /^[a-z][a-z\d+.-]*:/i.test(target);
+
+  if (!hasScheme && /\.pdf$/i.test(target)) {
+    const localPath = path.resolve(baseDirectory, target);
+    try {
+      if (fs.statSync(localPath).isFile()) return pathToFileURL(localPath).href;
+    } catch {
+      // Preserve normal web navigation for non-existent or inaccessible paths.
+    }
+  }
+
+  const normalized = hasScheme ? target : `https://${target}`;
   let parsed: URL;
   try {
     parsed = new URL(normalized);

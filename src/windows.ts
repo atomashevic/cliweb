@@ -33,6 +33,7 @@ import type {
   BrowserPanelMode,
   CurrentPageState,
 } from './browserDataTypes';
+import { normalizeNavigationUrl } from './control/protocol';
 
 export type Actions = {
   back: () => void;
@@ -433,9 +434,10 @@ function setupToolbarIPC(view: WindowView, browserData: BrowserDataStore) {
     contentContents.reload();
   });
 
-  ipcMain.on('toolbar:navigate-to', (event, url: string) => {
+  ipcMain.handle('toolbar:navigate-to', async (event, target: string) => {
     requireToolbarSender(event);
-    contentContents.loadURL(url);
+    if (typeof target !== 'string') throw new Error('Invalid navigation target');
+    await contentContents.loadURL(normalizeNavigationUrl(target));
   });
 
   ipcMain.handle('browser-data:get-current', (event) => {

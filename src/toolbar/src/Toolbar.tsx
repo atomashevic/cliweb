@@ -16,7 +16,7 @@ export interface BrowserToolbar {
   navigateBack: () => void;
   navigateForward: () => void;
   refresh: () => void;
-  navigateTo: (url: string) => void;
+  navigateTo: (url: string) => Promise<void>;
   getCurrentPageState: () => Promise<CurrentPageState>;
   toggleBookmark: () => Promise<BookmarkToggleResult>;
   setPanelMode: (mode: BrowserPanelMode | null) => Promise<BrowserPanelMode | null>;
@@ -180,11 +180,14 @@ export function Toolbar() {
     window.ipc.stopFindInPage();
   });
 
-  const handleUrlSubmit = (event: KeyboardEvent) => {
+  const handleUrlSubmit = async (event: KeyboardEvent) => {
     if (event.key !== 'Enter') return;
-    let targetUrl = (event.currentTarget as HTMLInputElement).value.trim();
-    if (!/^https?:\/\//i.test(targetUrl)) targetUrl = `https://${targetUrl}`;
-    window.ipc.navigateTo(targetUrl);
+    const target = (event.currentTarget as HTMLInputElement).value.trim();
+    try {
+      await window.ipc.navigateTo(target);
+    } catch (error) {
+      showMessage(error instanceof Error ? error.message : String(error));
+    }
   };
 
   const handleInputClick = (event: MouseEvent) => {

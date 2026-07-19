@@ -1,6 +1,7 @@
-import type { KeyEvent as KeyEventOriginal, TermEvent } from 'cliweb-native-rs';
+import { getWindowSize, type KeyEvent as KeyEventOriginal, type TermEvent } from 'cliweb-native-rs';
 import { handleEvent as handleKeyBinding } from './keybindings';
 import { focusedView } from './windows';
+import { mousePointInDevicePixels } from './tty/mouseCoordinates';
 
 const WHEEL_DELTA = 100;
 
@@ -15,7 +16,40 @@ function isSimpleMouseEvent(kind: unknown): kind is (typeof mouseEventTypes)[num
   return mouseEventTypes.includes(kind as (typeof mouseEventTypes)[number]);
 }
 
+let tmuxCellGrid: { columns: number; rows: number } | undefined;
+
+export function invalidateMouseCoordinateCache() {
+  tmuxCellGrid = undefined;
+}
+
+function mouseDevicePoint(view: NonNullable<typeof focusedView.current>, x: number, y: number) {
+  if (!process.env.TMUX) {
+    return mousePointInDevicePixels({ x, y }, { unit: 'pixels' });
+  }
+
+  if (!tmuxCellGrid) {
+    const { cols, rows } = getWindowSize();
+    tmuxCellGrid = { columns: cols, rows };
+  }
+
+  const rootDeviceLayout = view.layoutContainer.root.deviceLayout;
+  return mousePointInDevicePixels(
+    { x, y },
+    {
+      unit: 'cells',
+      ...tmuxCellGrid,
+      deviceWidth: rootDeviceLayout.width,
+      deviceHeight: rootDeviceLayout.height,
+    },
+  );
+}
+
 export function handleInput(evt: TermEvent) {
+  if (evt.eventType === 'resize') {
+    invalidateMouseCoordinateCache();
+    return;
+  }
+
   const view = focusedView.current;
   if (!view) {
     handleKeyBinding(evt);
@@ -65,8 +99,7 @@ export function handleInput(evt: TermEvent) {
       }
 
       const DPI_SCALE = view.layoutContainer.devicePixelRatio;
-      const rawX = x ?? 0;
-      const rawY = y ?? 0;
+      const { x: rawX, y: rawY } = mouseDevicePoint(view, x ?? 0, y ?? 0);
 
       // Determine which region we're in based on layout
       const { toolbarNode, contentNode } = view;

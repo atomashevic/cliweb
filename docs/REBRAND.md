@@ -1,4 +1,8 @@
-# CLIWEB rebrand and installation notes
+# Historical cliweb rebrand notes
+
+This document records the repository-wide migration to the `cliweb` identity. For current user
+setup, start with the [shared terminal browser guide](SETUP.md). For the published npm artifact, see
+[npm packaging](NPM_PACKAGING.md).
 
 This change establishes `cliweb` as the canonical identity of the application
 across its command-line interface, JavaScript packages, Rust native module,
@@ -19,10 +23,10 @@ automation, documentation, and runtime state.
 
 ## Installation and native build
 
-`setup.sh` installs a repository-local Bun runtime and reconciles dependencies
-on every explicit setup run. The native N-API module is built locally during
-package installation, so installation does not depend on a matching prebuilt
-release artifact already existing.
+`setup.sh` installs a repository-local Bun runtime, reconciles dependencies,
+and builds the native N-API module for source-checkout development. The
+published npm package instead selects a matching prebuilt native package, so
+end-user installation does not require Bun, Rust, Cargo, or a source checkout.
 
 The native package helper resolves Bun relative to both the source checkout and
 its installed location under `node_modules`. This keeps lifecycle scripts
